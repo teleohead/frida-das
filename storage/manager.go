@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bufio"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -45,10 +46,19 @@ func (m *Manager) LoadFile(filePath string) error {
 	}
 	defer f.Close()
 
+	reader := bufio.NewReader(f)
+
 	buf := make([]byte, frida.BytesPerElement)
 	for i := 0; i < len(m.Slab.Data); i++ {
-		if _, err := io.ReadFull(f, buf); err != nil {
+		if _, err := io.ReadFull(reader, buf); err != nil {
 			if err == io.EOF {
+				fmt.Printf("loaded %d actual elements. padding 0s up to the total size of %d.\n", i, len(m.Slab.Data))
+				break
+			}
+			if err == io.ErrUnexpectedEOF {
+				elems := binary.LittleEndian.Uint64(buf)
+				m.Slab.Data[i].SetUint64(elems)
+				fmt.Printf("loaded %d actual elements (final element partial). padding 0s up to the total size of %d.\n", i+1, len(m.Slab.Data))
 				break
 			}
 			return fmt.Errorf("error when reading at element %d: %w", i, err)
