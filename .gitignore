@@ -1,0 +1,32 @@
+# Ignore everything
+*
+
+# But not these files...
+!/.gitignore
+!.gitkeep
+!*.go
+!go.sum
+!go.mod
+!/README.md
+!/LICENSE
+!/Makefile
+
+!*.md
+!*.png
+!*.jpg
+!*.jpeg
+!*.pdf
+!*.yaml
+!*.yml
+!*.json
+
+# ...even if they are in subdirectories
+!*/
+
+# Explicit Blocks
+bin/
+temp/
+vendor/
+.DS_Store
+.idea/
+.vscode/
