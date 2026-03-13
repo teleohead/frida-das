@@ -12,6 +12,10 @@ type InterleavedSlab struct {
 }
 
 func (s *InterleavedSlab) GetBatch(index int) ([]frida.Scalar, error) {
+	if index < 0 {
+		return nil, fmt.Errorf("batch index %d must be non-negative", index)
+	}
+
 	start := index * frida.BatchSize
 	end := start + frida.BatchSize
 
