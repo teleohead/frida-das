@@ -28,6 +28,7 @@ func NewManager(numElements int) *Manager {
 
 	for currLayerSize > 0 {
 		foldingPool = append(foldingPool, block[offset:offset+currLayerSize])
+		offset += currLayerSize
 		currLayerSize = currLayerSize / 2
 	}
 
