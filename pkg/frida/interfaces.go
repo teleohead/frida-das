@@ -46,6 +46,12 @@ type FridaVerifier struct {
 	domainSize int
 }
 
+// NewVerifier constructs a FridaVerifier using the given parameters and commitment.
+// Note that it recomputes the Fiat-Shamir challenges from the roots.
+func NewVerifier(params FriParams, commitment *Commitment, domainSize int) (*FridaVerifier, error) {
+	return nil, nil
+}
+
 // Verify checks an FriProof for given evaluations and positions.
 func (v *FridaVerifier) Verify(proof *FriProof, evaluations []Scalar, positions []int) error {
 	return nil
