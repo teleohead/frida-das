@@ -58,7 +58,7 @@ type FriProof struct {
 }
 
 type MerkleTree struct {
-	root   Hash
-	leaves [][]byte
-	nodes  []Hash
+	Root   Hash
+	Leaves [][]byte
+	Nodes  []Hash
 }
