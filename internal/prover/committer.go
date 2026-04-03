@@ -39,7 +39,7 @@ func BuildMerkleTree(leaves [][]byte) frida.MerkleTree {
 
 // Creates a merkle proof for a given leaf index in the tree.
 func GetMerkleProof(tree frida.MerkleTree, index int) frida.MerklePath {
-	proof := []frida.Hash{}
+	proof := make([]frida.Hash, 0, 32)
 	n := len(tree.Leaves)
 
 	pos := n + index
@@ -69,16 +69,16 @@ func VerifyMerkleProof(root frida.Hash, path frida.MerklePath) bool {
 	hash := sha256.Sum256(path.LeafValue)
 	pos := path.NumLeaves + path.Index
 	for _, sibling := range path.Siblings {
-		var combined []byte
+		var combined [64]byte
 		if pos%2 == 0 {
-			combined = append(combined, hash[:]...)
-			combined = append(combined, sibling[:]...)
+			copy(combined[:32], hash[:])
+			copy(combined[32:], sibling[:])
 		} else {
-			combined = append(combined, sibling[:]...)
-			combined = append(combined, hash[:]...)
+			copy(combined[:32], sibling[:])
+			copy(combined[32:], hash[:])
 		}
 
-		hash = sha256.Sum256(combined)
+		hash = sha256.Sum256(combined[:])
 		pos /= 2
 	}
 	return hash == root
