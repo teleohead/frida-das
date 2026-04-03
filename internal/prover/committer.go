@@ -37,13 +37,6 @@ func BuildMerkleTree(leaves [][]byte) frida.MerkleTree {
 	}
 }
 
-type MerklePath struct {
-	LeafValue []byte
-	Siblings  []frida.Hash
-	Index     int
-	NumLeaves int
-}
-
 // Creates a merkle proof for a given leaf index in the tree.
 func GetMerkleProof(tree frida.MerkleTree, index int) frida.MerklePath {
 	proof := []frida.Hash{}
