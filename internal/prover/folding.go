@@ -150,8 +150,8 @@ func GenerateDomain(domainSize int) []frida.Scalar {
 	var g frida.Scalar
 	g.SetUint64(7)
 
-	// p - 1 = 2^64 - 2^32. We use bitwise operation for performance.
-	pm1 := (uint64(0xFFFFFFFF) << 32) | uint64(0x00000000)
+	// p - 1 = 2^64 - 2^32
+	pm1 := uint64(0xFFFFFFFF00000000)
 	// e = (p - 1) / n
 	exp := pm1 / uint64(domainSize)
 
