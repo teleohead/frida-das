@@ -1,18 +1,9 @@
 package frida
 
 // FridaBuilder build provers with given parameters.
-type FridaBuilder struct {
-	Params FriParams
-}
-
-// NewBuilder creates a builder with the given parameters
-func NewBuilder(p FriParams) *FridaBuilder {
-	return &FridaBuilder{Params: p}
-}
-
-// CommitAndProve encodes data, FRI-commit, and returns the Commitment and a FridaProver for opening.
-func (b *FridaBuilder) CommitAndProve(data []byte) (*Commitment, *FridaProver, error) {
-	return nil, nil, nil
+type FridaBuilder interface {
+	// CommitAndProve encodes data, FRI-commit, and returns the Commitment and a FridaProver for opening.
+	CommitAndProve(data []byte) (*Commitment, *FridaProver, error)
 }
 
 type FridaProver struct {
@@ -33,9 +24,9 @@ type FridaProver struct {
 	trees []MerkleTree
 }
 
-// Open generates an FriProof for given positions.
-func (p *FridaProver) Open(positions []int) (*FriProof, error) {
-	return nil, nil
+type Prover interface {
+	// Open generates an FriProof for given positions.
+	Open(positions []int) (*FriProof, error)
 }
 
 type FridaVerifier struct {
@@ -46,13 +37,8 @@ type FridaVerifier struct {
 	domainSize int
 }
 
-// NewVerifier constructs a FridaVerifier using the given parameters and commitment.
-// Note that it recomputes the Fiat-Shamir challenges from the roots.
-func NewVerifier(params FriParams, commitment *Commitment, domainSize int) (*FridaVerifier, error) {
-	return nil, nil
-}
-
-// Verify checks an FriProof for given evaluations and positions.
-func (v *FridaVerifier) Verify(proof *FriProof, evaluations []Scalar, positions []int) error {
-	return nil
+// Verifier defines the core logic for the FRI verification process.
+type Verifier interface {
+	// Verify checks an FriProof for given evaluations and positions.
+	Verify(proof *FriProof, evaluations []Scalar, positions []int) error
 }
