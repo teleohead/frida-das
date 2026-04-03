@@ -38,7 +38,7 @@ func BuildMerkleTree(leaves [][]byte) frida.MerkleTree {
 
 type MerklePath struct {
 	LeafValue []byte
-	Siblings  []Hash
+	Siblings  []frida.Hash
 	Index     int
 	NumLeaves int
 }
@@ -74,7 +74,7 @@ func GetMerkleProof(tree frida.MerkleTree, index int) frida.MerklePath {
 func VerifyMerkleProof(root frida.Hash, path frida.MerklePath) bool {
 	hash := sha256.Sum256(path.LeafValue)
 	pos := path.NumLeaves + path.Index
-	for i, sibling := range path.Siblings {
+	for _, sibling := range path.Siblings {
 		var combined []byte
 		if pos % 2 == 0 {
 			combined = append(combined, hash[:]...)
@@ -91,10 +91,10 @@ func VerifyMerkleProof(root frida.Hash, path frida.MerklePath) bool {
 }
 
 // Converts bytes to Scalar
-func BytesToScalars(data []byte) []Scalar {
+func BytesToScalars(data []byte) []frida.Scalar {
 	n := (len(data) + 7) / 8
 
-	scalars := make([]Scalar, n)
+	scalars := make([]frida.Scalar, n)
 	for i := 0; i < n; i++ {
 		// Take 8 bytes at a time and convert to Scalar
 		end := i*8 + 8

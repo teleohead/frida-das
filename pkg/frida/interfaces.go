@@ -8,20 +8,20 @@ type FridaBuilder interface {
 
 type FridaProver struct {
 	Params     FriParams
-	domainSize int
+	DomainSize int
 
 	// B interleaved codewords (nil if B = 1)
-	batchOracle []Scalar
+	BatchOracle []Scalar
 	// G_0
-	codeword []Scalar
+	Codeword []Scalar
 	// G_1, G_2, ..., G_r
-	foldedOracles [][]Scalar
+	FoldedOracles [][]Scalar
 	// rho_1, rho_2, ... rho_r
-	challenges []Scalar
+	Challenges []Scalar
 	// xi
-	batchChallenge Scalar
+	BatchChallenge Scalar
 	// Merkle Trees
-	trees []MerkleTree
+	Trees []MerkleTree
 }
 
 type Prover interface {
@@ -31,10 +31,10 @@ type Prover interface {
 
 type FridaVerifier struct {
 	Params     FriParams
-	commitment *Commitment
+	Commitment *Commitment
 	// challenges are recomputed from Commitment.Roots
-	challenges []Scalar
-	domainSize int
+	Challenges []Scalar
+	DomainSize int
 }
 
 // Verifier defines the core logic for the FRI verification process.
