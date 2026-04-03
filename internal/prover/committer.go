@@ -1,4 +1,5 @@
 package prover
+
 import (
 	"crypto/sha256"
 	"encoding/binary"
@@ -10,7 +11,7 @@ import (
 func BuildMerkleTree(leaves [][]byte) frida.MerkleTree {
 
 	n := len(leaves)
-  	nodes := make([]frida.Hash, 2*n)
+	nodes := make([]frida.Hash, 2*n)
 
 	for i := 0; i < n; i++ {
 		// Hash each leaf
@@ -30,9 +31,9 @@ func BuildMerkleTree(leaves [][]byte) frida.MerkleTree {
 	}
 
 	return frida.MerkleTree{
-		Root: nodes[1],
+		Root:   nodes[1],
 		Leaves: leaves,
-		Nodes: nodes,
+		Nodes:  nodes,
 	}
 }
 
@@ -47,11 +48,11 @@ type MerklePath struct {
 func GetMerkleProof(tree frida.MerkleTree, index int) frida.MerklePath {
 	proof := []frida.Hash{}
 	n := len(tree.Leaves)
-	
+
 	pos := n + index
 	for pos > 1 {
 		sibling := 0
-		if pos % 2 == 0 {
+		if pos%2 == 0 {
 			sibling = pos + 1
 		} else {
 			sibling = pos - 1
@@ -63,8 +64,8 @@ func GetMerkleProof(tree frida.MerkleTree, index int) frida.MerklePath {
 
 	path := frida.MerklePath{
 		LeafValue: tree.Leaves[index],
-		Siblings: proof,
-		Index: index,
+		Siblings:  proof,
+		Index:     index,
 		NumLeaves: n,
 	}
 	return path
@@ -76,7 +77,7 @@ func VerifyMerkleProof(root frida.Hash, path frida.MerklePath) bool {
 	pos := path.NumLeaves + path.Index
 	for _, sibling := range path.Siblings {
 		var combined []byte
-		if pos % 2 == 0 {
+		if pos%2 == 0 {
 			combined = append(combined, hash[:]...)
 			combined = append(combined, sibling[:]...)
 		} else {
