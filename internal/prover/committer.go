@@ -84,3 +84,28 @@ func VerifyMerkleProof(root frida.Hash, path frida.MerklePath) bool {
 	}
 	return hash == root
 }
+
+// Converts bytes to Scalar
+func BytesToScalars(data []byte) []Scalar {
+	n := (len(data) + 7) / 8
+
+	scalars := make([]Scalar, n)
+	for i := 0; i < n; i++ {
+		// Take 8 bytes at a time and convert to Scalar
+		end := i*8 + 8
+		if end > len(data) {
+			end = len(data)
+		}
+		chunk := data[i*8 : end]
+
+		// Pad the chunk with zeros if it's less than 8 bytes
+		for len(chunk) < 8 {
+			chunk = append(chunk, 0)
+		}
+
+		value := binary.LittleEndian.Uint64(chunk)
+		scalars[i].SetUint64(value)
+	}
+
+	return scalars
+}
