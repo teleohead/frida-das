@@ -3,6 +3,7 @@ package prover
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"fmt"
 
 	"github.com/teleohead/frida-das/pkg/frida"
 )
@@ -90,8 +91,8 @@ func VerifyMerkleProof(root frida.Hash, path frida.MerklePath) bool {
 	return hash == root
 }
 
-// Converts bytes to Scalar
-func BytesToScalars(data []byte) []frida.Scalar {
+// BytesToScalars converts bytes to Scalar's.
+func BytesToScalars(data []byte) ([]frida.Scalar, error) {
 	n := (len(data) + 7) / 8
 
 	scalars := make([]frida.Scalar, n)
@@ -104,13 +105,17 @@ func BytesToScalars(data []byte) []frida.Scalar {
 		chunk := data[i*8 : end]
 
 		// Pad the chunk with zeros if it's less than 8 bytes
-		for len(chunk) < 8 {
-			chunk = append(chunk, 0)
+		var paddedChunk [8]byte
+		copy(paddedChunk[:], chunk)
+
+		value := binary.LittleEndian.Uint64(paddedChunk[:])
+
+		if value >= uint64(0xFFFFFFFF00000001) {
+			return nil, fmt.Errorf("invalid data: value %d exceeds Goldilocks prime", value)
 		}
 
-		value := binary.LittleEndian.Uint64(chunk)
 		scalars[i].SetUint64(value)
 	}
 
-	return scalars
+	return scalars, nil
 }
