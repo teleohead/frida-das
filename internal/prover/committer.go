@@ -1,5 +1,10 @@
 package prover
-import "crypto/sha256"
+import (
+	"crypto/sha256"
+	"encoding/binary"
+
+	"github.com/teleohead/frida-das/pkg/frida"
+)
 
 // Builds a Merkle tree from the given leaves and returns the tree structure.
 func BuildMerkleTree(leaves [][]byte) frida.MerkleTree {
