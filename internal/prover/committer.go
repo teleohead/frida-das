@@ -23,11 +23,10 @@ func BuildMerkleTree(leaves [][]byte) frida.MerkleTree {
 		right := nodes[2*i+1]
 
 		// Combine left and right hashes
-		var combined []byte
-		combined = append(combined, left[:]...)
-		combined = append(combined, right[:]...)
-
-		nodes[i] = sha256.Sum256(combined)
+		var combined [64]byte
+		copy(combined[:32], left[:])
+		copy(combined[32:], right[:])
+		nodes[i] = sha256.Sum256(combined[:])
 	}
 
 	return frida.MerkleTree{
