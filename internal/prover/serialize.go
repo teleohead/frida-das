@@ -26,24 +26,24 @@ func scalarToBytes(s *frida.Scalar) []byte {
 
 // BytesToScalars converts bytes to an array of scalars.
 func bytesToScalars(data []byte) ([]frida.Scalar, error) {
-	n := (len(data) + 7) / 8
+	n := (len(data) + frida.BytesPerElement - 1) / frida.BytesPerElement
 
 	scalars := make([]frida.Scalar, n)
 	for i := 0; i < n; i++ {
 		// Take 8 bytes at a time and convert to Scalar
-		end := i*8 + 8
+		end := i*frida.BytesPerElement + frida.BytesPerElement
 		if end > len(data) {
 			end = len(data)
 		}
-		chunk := data[i*8 : end]
+		chunk := data[i*frida.BytesPerElement : end]
 
 		// Pad the chunk with zeros if it's less than 8 bytes
-		var paddedChunk [8]byte
+		var paddedChunk [frida.BytesPerElement]byte
 		copy(paddedChunk[:], chunk)
 
 		value := binary.LittleEndian.Uint64(paddedChunk[:])
 
-		if value >= uint64(0xFFFFFFFF00000001) {
+		if value >= uint64(frida.GoldilocksPrime) {
 			return nil, fmt.Errorf("invalid data: value %d exceeds Goldilocks prime", value)
 		}
 

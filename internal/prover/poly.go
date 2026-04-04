@@ -14,7 +14,7 @@ func GenerateDomain(domainSize int) []frida.Scalar {
 	g.SetUint64(7)
 
 	// p - 1 = 2^64 - 2^32
-	pm1 := uint64(0xFFFFFFFF00000000)
+	pm1 := uint64(frida.GoldilocksPrime - 1)
 	// e = (p - 1) / n
 	exp := pm1 / uint64(domainSize)
 

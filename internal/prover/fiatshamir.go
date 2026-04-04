@@ -20,7 +20,7 @@ func chainHash(root frida.Hash, prevHst frida.Hash, roundIndex int) frida.Hash {
 // This is the hat{H} from Section 3 of the paper.
 func deriveFieldChallenge(hst frida.Hash) frida.Scalar {
 	h := sha256.Sum256(hst[:])
-	val := binary.LittleEndian.Uint64(h[:8]) % 0xFFFFFFFF00000001
+	val := binary.LittleEndian.Uint64(h[:8]) % frida.GoldilocksPrime
 	var s frida.Scalar
 	s.SetUint64(val)
 	return s
