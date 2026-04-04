@@ -6,35 +6,9 @@ type FridaBuilder interface {
 	CommitAndProve(data []byte) (*Commitment, *FridaProver, error)
 }
 
-type FridaProver struct {
-	Params     FriParams
-	DomainSize int
-
-	// B interleaved codewords (nil if B = 1)
-	BatchOracle []Scalar
-	// G_0
-	Codeword []Scalar
-	// G_1, G_2, ..., G_r
-	FoldedOracles [][]Scalar
-	// rho_1, rho_2, ... rho_r
-	Challenges []Scalar
-	// xi
-	BatchChallenge Scalar
-	// Merkle Trees
-	Trees []MerkleTree
-}
-
 type Prover interface {
 	// Open generates an FriProof for given positions.
 	Open(positions []int) (*FriProof, error)
-}
-
-type FridaVerifier struct {
-	Params     FriParams
-	Commitment *Commitment
-	// challenges are recomputed from Commitment.Roots
-	Challenges []Scalar
-	DomainSize int
 }
 
 // Verifier defines the core logic for the FRI verification process.
