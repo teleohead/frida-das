@@ -1,7 +1,6 @@
 package prover
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/teleohead/frida-das/pkg/frida"
@@ -22,7 +21,7 @@ func (b *Builder) CommitAndProve(data []byte) (*frida.Commitment, *frida.FridaPr
 	params := &b.Params
 	ff := params.FoldingFactor
 
-	scalars, err := BytesToScalars(data)
+	scalars, err := bytesToScalars(data)
 	if err != nil {
 		return nil, nil, fmt.Errorf("byte-to-scalar data conversion: %w", err)
 	}
@@ -145,33 +144,4 @@ func (b *Builder) CommitAndProve(data []byte) (*frida.Commitment, *frida.FridaPr
 	}
 
 	return comm, prover, nil
-}
-
-// serializeSymbol extracts B scalars at domain point s from the interleaved slab and converts to bytes.
-func serializeSymbol(slab []frida.Scalar, s int, batchSize int) []byte {
-	buf := make([]byte, batchSize*frida.BytesPerElement)
-	for j := 0; j < batchSize; j++ {
-		val := slab[s*batchSize+j].Uint64()
-		binary.LittleEndian.PutUint64(buf[j*frida.BytesPerElement:], val)
-	}
-	return buf
-}
-
-// scalarToBytes converts a single scalar to 8-byte data (in little-endian representation).
-func scalarToBytes(s *frida.Scalar) []byte {
-	buf := make([]byte, frida.BytesPerElement)
-	binary.LittleEndian.PutUint64(buf, s.Uint64())
-	return buf
-}
-
-// computeNumRounds calculates the number of FRI folding rounds.
-// degree is the number of coefficients of a polynomial. e.g. x^2 + x + 1 has degree of 3.
-func computeNumRounds(degree, foldingFactor, maxRemainderDegree int) int {
-	r := 0
-	d := degree
-	for d > maxRemainderDegree+1 {
-		d /= foldingFactor
-		r++
-	}
-	return r
 }
