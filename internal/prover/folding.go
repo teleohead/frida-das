@@ -8,41 +8,6 @@ import (
 	"github.com/teleohead/frida-das/pkg/frida"
 )
 
-// FoldAll runs the complete FRI folding phase.
-func FoldAll(
-	codeword []frida.Scalar,      // G_0
-	foldingPool [][]frida.Scalar, // prelocated from Manager.FoldingPool
-	challenges []frida.Scalar,    // rho_1, ..., rho_r
-	domainSize int,               // |L_0|
-	foldingFactor int,            // F
-) [][]frida.Scalar {
-	numRounds := len(challenges)
-
-	preimageBuf := make([]int, foldingFactor)
-	xs := make([]frida.Scalar, foldingFactor)
-	fs := make([]frida.Scalar, foldingFactor)
-	weights := make([]frida.Scalar, foldingFactor)
-	diffs := make([]frida.Scalar, foldingFactor)
-
-	currentDomain := GenerateDomain(domainSize)
-
-	prev := codeword
-	results := make([][]frida.Scalar, numRounds)
-
-	for r := 0; r < numRounds; r++ {
-		next := foldingPool[r]
-		AlgebraicHash(prev, next, currentDomain, &challenges[r], foldingFactor, preimageBuf, xs, fs, weights, diffs)
-		results[r] = next
-		nextDomainSize := len(currentDomain) / foldingFactor
-		if r < numRounds-1 {
-			currentDomain = GenerateDomain(nextDomainSize)
-		}
-		prev = next
-	}
-
-	return results
-}
-
 // AlgebraicHash implements FRI Algebraic Hash Function H_{rho_i}[G_{i-1}]
 // This function is defined in Section 4.1 of the FRIDA Paper.
 func AlgebraicHash(
