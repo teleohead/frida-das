@@ -1,7 +1,6 @@
 package sim
 
 import (
-	"encoding/binary"
 	"sync"
 
 	"github.com/teleohead/frida-das/pkg/frida"
@@ -23,6 +22,25 @@ func NewNetwork(p *frida.FridaProver, dp DataProvider, requestChan <-chan Sample
 		DataProvider: dp,
 		RequestChan:  requestChan,
 		NumWorkers:   numWorkers,
+	}
+}
+
+func (net *Network) Start() {
+	for i := 0; i < net.NumWorkers; i++ {
+		net.wg.Add(1)
+		go net.worker()
+	}
+}
+
+func (net *Network) Wait() {
+	net.wg.Wait()
+}
+
+func (net *Network) worker() {
+	defer net.wg.Done()
+	for req := range net.RequestChan {
+		resp := net.handleRequest(req)
+		req.Response <- resp
 	}
 }
 

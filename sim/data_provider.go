@@ -39,7 +39,7 @@ func (hp *HonestProvider) ProvideResponse(p *frida.FridaProver, pos int) SampleR
 type MaliciousProvider struct {
 	// CorruptPosition records the positions where AdversaryNode returns garbage data.
 	CorruptPositions map[int]bool
-	hp               HonestProvider
+	hp               *HonestProvider
 }
 
 // NewMaliciousProvider creates an adversary node that corrupts data at given positions.
@@ -48,7 +48,10 @@ func NewMaliciousProvider(positions []int) *MaliciousProvider {
 	for _, p := range positions {
 		m[p] = true
 	}
-	return &MaliciousProvider{CorruptPositions: m}
+	return &MaliciousProvider{
+		CorruptPositions: m,
+		hp:               NewHonestProvider(),
+	}
 }
 
 // ProvideResponse creates a corrupt response for a corrupted position
