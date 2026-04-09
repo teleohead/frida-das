@@ -7,6 +7,8 @@ import (
 	"github.com/teleohead/frida-das/pkg/frida"
 )
 
+// DataProvider generates a SampleResponse for a given position.
+// It is utilized by the Network.
 type DataProvider interface {
 	ProvideResponse(p *frida.FridaProver, pos int) SampleResponse
 }
@@ -14,6 +16,7 @@ type DataProvider interface {
 // HonestProvider produces real opening proofs and evaluations.
 type HonestProvider struct{}
 
+// NewHonestProvider creates an honest node that corrupts nothing and provide an honest response.
 func NewHonestProvider() *HonestProvider {
 	return &HonestProvider{}
 }
@@ -71,6 +74,7 @@ func (mp *MaliciousProvider) ProvideResponse(p *frida.FridaProver, pos int) Samp
 	}
 }
 
+// extractEvaluations reads the B interleaved elements at domain point s (pos) from the prover's batchOracle.
 func extractEvaluations(p *frida.FridaProver, pos int) []frida.Scalar {
 	B := p.Params.BatchSize
 	evals := make([]frida.Scalar, B)
@@ -83,6 +87,8 @@ func extractEvaluations(p *frida.FridaProver, pos int) []frida.Scalar {
 	return evals
 }
 
+// extractEvaluationBytes returns the serialized form of an evaluation.
+// Returns B*8 bytes in little-endian format.
 func extractEvaluationBytes(p *frida.FridaProver, pos int) []byte {
 	evals := extractEvaluations(p, pos)
 	buf := make([]byte, len(evals)*frida.BytesPerElement)
