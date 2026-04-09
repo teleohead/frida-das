@@ -1,11 +1,13 @@
 package sim
 
 import (
+	"encoding/binary"
+
 	"github.com/teleohead/frida-das/internal/prover"
 	"github.com/teleohead/frida-das/pkg/frida"
 )
 
-type Provider interface {
+type DataProvider interface {
 	ProvideResponse(p *frida.FridaProver, pos int) SampleResponse
 }
 
@@ -23,7 +25,7 @@ func (hp *HonestProvider) ProvideResponse(p *frida.FridaProver, pos int) SampleR
 		return SampleResponse{Position: pos, Err: err}
 	}
 
-	evals := extractEvaluations(state, pos)
+	evals := extractEvaluations(p, pos)
 
 	return SampleResponse{
 		Position:    pos,
@@ -64,4 +66,25 @@ func (mp *MaliciousProvider) ProvideResponse(p *frida.FridaProver, pos int) Samp
 		Proof:       frida.FriProof{}, // empty proof
 		Err:         nil,
 	}
+}
+
+func extractEvaluations(p *frida.FridaProver, pos int) []frida.Scalar {
+	B := p.Params.BatchSize
+	evals := make([]frida.Scalar, B)
+	if p.BatchOracle != nil {
+		base := pos * B
+		copy(evals, p.BatchOracle[base:base+B])
+	} else {
+		evals[0] = p.Codeword[pos]
+	}
+	return evals
+}
+
+func extractEvaluationBytes(p *frida.FridaProver, pos int) []byte {
+	evals := extractEvaluations(p, pos)
+	buf := make([]byte, len(evals)*frida.BytesPerElement)
+	for i, e := range evals {
+		binary.LittleEndian.PutUint64(buf[i*frida.BytesPerElement:], e.Uint64())
+	}
+	return buf
 }
