@@ -5,6 +5,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
+
+	"github.com/teleohead/frida-das/internal/prover"
+	"github.com/teleohead/frida-das/pkg/frida"
 )
 
 func main() {
@@ -56,7 +60,49 @@ func cmdGenerateData(args []string) {
 }
 
 func cmdCommit(args []string) {
+	fs := flag.NewFlagSet("commit", flag.ExitOnError)
+	dataPath := fs.String("data", "data.bin", "input data file")
+	blowup := fs.Int("blowup", 8, "blowup factor (inverse rate)")
+	folding := fs.Int("folding", 4, "folding factor")
+	remainder := fs.Int("remainder", 31, "max remainder degree")
+	batch := fs.Int("batch", 64, "batch size B")
+	queries := fs.Int("queries", 32, "number of query repetitions L")
+	fs.Parse(args)
 
+	data, err := os.ReadFile(*dataPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: failed to read data: %v\n", err)
+		os.Exit(1)
+	}
+
+	params := frida.FriParams{
+		BlowupFactor:       *blowup,
+		FoldingFactor:      *folding,
+		MaxRemainderDegree: *remainder,
+		BatchSize:          *batch,
+		NumQueries:         *queries,
+	}
+
+	builder := prover.NewBuilder(params)
+
+	fmt.Printf("*** committing to %d bytes (blowup=%d, folding=%d, remainder=%d, batch=%d, queries=%d) ***\n",
+		len(data), *blowup, *folding, *remainder, *batch, *queries)
+
+	startTime := time.Now()
+	commitment, proverState, err := builder.CommitAndProve(data)
+	duration := time.Since(startTime)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: failed to commit: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("*** commitment finished in %s ***\n", duration)
+	fmt.Printf("domain size:    %d\n", proverState.DomainSize)
+	fmt.Printf("folding rounds: %d\n", len(proverState.FoldedOracles))
+	fmt.Printf("roots:          %d\n", len(commitment.Roots))
+	fmt.Printf("final layer:    %d elements\n", len(commitment.FinalLayer))
+	fmt.Printf("query proofs:   %d\n", len(commitment.QueryProofs))
 }
 
 func cmdOpen(args []string) {
