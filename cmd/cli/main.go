@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"flag"
 	"fmt"
 	"os"
 )
@@ -31,7 +33,26 @@ func main() {
 }
 
 func cmdGenerateData(args []string) {
+	fs := flag.NewFlagSet("generate-data", flag.ExitOnError)
+	size := fs.Int("size", 65536, "data size in bytes")
+	out := fs.String("out", "data.bin", "output file path")
+	fs.Parse(args)
 
+	data := make([]byte, *size)
+
+	_, err := rand.Read(data)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: failed to generate random data: %v\n", err)
+		os.Exit(1)
+	}
+
+	err = os.WriteFile(*out, data, 0644)
+	if err != nil {
+		fmt.Fprint(os.Stderr, "failure: failed to write file: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("success: generated %d bytes -> %s \n", *size, *out)
 }
 
 func cmdCommit(args []string) {
