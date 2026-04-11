@@ -1,8 +1,6 @@
 package sim
 
 import (
-	"encoding/binary"
-
 	"github.com/teleohead/frida-das/internal/prover"
 	"github.com/teleohead/frida-das/pkg/frida"
 )
@@ -85,15 +83,4 @@ func extractEvaluations(p *frida.FridaProver, pos int) []frida.Scalar {
 		evals[0] = p.Codeword[pos]
 	}
 	return evals
-}
-
-// extractEvaluationBytes returns the serialized form of an evaluation.
-// Returns B*8 bytes in little-endian format.
-func extractEvaluationBytes(p *frida.FridaProver, pos int) []byte {
-	evals := extractEvaluations(p, pos)
-	buf := make([]byte, len(evals)*frida.BytesPerElement)
-	for i, e := range evals {
-		binary.LittleEndian.PutUint64(buf[i*frida.BytesPerElement:], e.Uint64())
-	}
-	return buf
 }
