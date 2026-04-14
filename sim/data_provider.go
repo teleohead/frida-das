@@ -1,14 +1,13 @@
 package sim
 
 import (
-	"github.com/teleohead/frida-das/internal/prover"
 	"github.com/teleohead/frida-das/pkg/frida"
 )
 
 // DataProvider generates a SampleResponse for a given position.
 // It is utilized by the Network.
 type DataProvider interface {
-	ProvideResponse(p *frida.FridaProver, pos int) SampleResponse
+	ProvideResponse(p *frida.Prover, pos int) SampleResponse
 }
 
 // HonestProvider produces real opening proofs and evaluations.
@@ -19,8 +18,8 @@ func NewHonestProvider() *HonestProvider {
 	return &HonestProvider{}
 }
 
-func (hp *HonestProvider) ProvideResponse(p *frida.FridaProver, pos int) SampleResponse {
-	proof, err := prover.Open(p, []int{pos})
+func (hp *HonestProvider) ProvideResponse(p *frida.Prover, pos int) SampleResponse {
+	proof, err := p.Open([]int{pos})
 
 	if err != nil {
 		return SampleResponse{Position: pos, Err: err}
@@ -56,7 +55,7 @@ func NewMaliciousProvider(positions []int) *MaliciousProvider {
 }
 
 // ProvideResponse creates a corrupt response for a corrupted position
-func (mp *MaliciousProvider) ProvideResponse(p *frida.FridaProver, pos int) SampleResponse {
+func (mp *MaliciousProvider) ProvideResponse(p *frida.Prover, pos int) SampleResponse {
 	if !mp.CorruptPositions[pos] {
 		return mp.hp.ProvideResponse(p, pos)
 	}
@@ -73,7 +72,7 @@ func (mp *MaliciousProvider) ProvideResponse(p *frida.FridaProver, pos int) Samp
 }
 
 // extractEvaluations reads the B interleaved elements at domain point s (pos) from the prover's batchOracle.
-func extractEvaluations(p *frida.FridaProver, pos int) []frida.Scalar {
+func extractEvaluations(p *frida.Prover, pos int) []frida.Scalar {
 	B := p.Params.BatchSize
 	evals := make([]frida.Scalar, B)
 	if p.BatchOracle != nil {

@@ -1,13 +1,11 @@
-package prover
+package frida
 
 import (
 	"fmt"
-
-	"github.com/teleohead/frida-das/pkg/frida"
 )
 
 // Open generates FriProofs for the given positions.
-func Open(prover *frida.FridaProver, positions []int) (*frida.FriProof, error) {
+func (prover *Prover) Open(positions []int) (*FriProof, error) {
 	if len(positions) == 0 {
 		return nil, fmt.Errorf("no positions given")
 	}
@@ -16,9 +14,9 @@ func Open(prover *frida.FridaProver, positions []int) (*frida.FriProof, error) {
 	}
 
 	numLayers := len(prover.Trees)
-	layers := make([]frida.LayerProof, numLayers)
+	layers := make([]LayerProof, numLayers)
 	for i := range layers {
-		layers[i].Paths = make([]frida.MerklePath, 0, len(positions))
+		layers[i].Paths = make([]MerklePath, 0, len(positions))
 	}
 
 	for _, pos := range positions {
@@ -26,7 +24,7 @@ func Open(prover *frida.FridaProver, positions []int) (*frida.FriProof, error) {
 		currentDomainSize := prover.DomainSize
 		for layer := 0; layer < numLayers; layer++ {
 			leafIdx := currentPos % len(prover.Trees[layer].Leaves)
-			path := GetMerkleProof(prover.Trees[layer], leafIdx)
+			path := getMerkleProof(prover.Trees[layer], leafIdx)
 			layers[layer].Paths = append(layers[layer].Paths, path)
 			if layer >= 1 { // fold
 				currentDomainSize /= prover.Params.FoldingFactor
@@ -36,21 +34,21 @@ func Open(prover *frida.FridaProver, positions []int) (*frida.FriProof, error) {
 			}
 		}
 	}
-	return &frida.FriProof{Layers: layers}, nil
+	return &FriProof{Layers: layers}, nil
 }
 
 // openSingle generates a proof for exactly one position.
-func openSingle(prover *frida.FridaProver, pos int) (*frida.FriProof, error) {
+func openSingle(prover *Prover, pos int) (*FriProof, error) {
 	numLayers := len(prover.Trees)
-	layers := make([]frida.LayerProof, numLayers)
+	layers := make([]LayerProof, numLayers)
 
 	currentPos := pos
 	currentDomainSize := prover.DomainSize
 
 	for layer := 0; layer < numLayers; layer++ {
 		leafIdx := currentPos % len(prover.Trees[layer].Leaves)
-		path := GetMerkleProof(prover.Trees[layer], leafIdx)
-		layers[layer] = frida.LayerProof{Paths: []frida.MerklePath{path}}
+		path := getMerkleProof(prover.Trees[layer], leafIdx)
+		layers[layer] = LayerProof{Paths: []MerklePath{path}}
 		if layer >= 1 { // G_0 or folded layers
 			currentDomainSize /= prover.Params.FoldingFactor
 			if currentDomainSize > 0 {
@@ -59,6 +57,6 @@ func openSingle(prover *frida.FridaProver, pos int) (*frida.FriProof, error) {
 		}
 	}
 
-	return &frida.FriProof{Layers: layers}, nil
+	return &FriProof{Layers: layers}, nil
 
 }
