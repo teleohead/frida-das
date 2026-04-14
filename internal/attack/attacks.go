@@ -1,4 +1,4 @@
-package sim
+package attack
 
 import (
 	"crypto/sha256"
@@ -7,7 +7,7 @@ import (
 )
 
 // Add 1 to the first element of the final Layer
-func corruptFinalLayer(c *frida.Commitment) {
+func CorruptFinalLayer(c *frida.Commitment) {
 	if len(c.FinalLayer) == 0 {
 		return
 	}
@@ -17,7 +17,7 @@ func corruptFinalLayer(c *frida.Commitment) {
 }
 
 // Flips every bit of the first sibling hash in the path
-func corruptMerkleSibling(p *frida.MerklePath) {
+func CorruptMerkleSibling(p *frida.MerklePath) {
 	if len(p.Siblings) == 0 {
 		return
 	}
@@ -27,7 +27,7 @@ func corruptMerkleSibling(p *frida.MerklePath) {
 }
 
 // Replace the first Merkle root with a fresh hash derived from a fixed nonce
-func decoupleFiatShamir(c *frida.Commitment) {
+func DecoupleFiatShamir(c *frida.Commitment) {
 	if len(c.Roots) == 0 {
 		return
 	}

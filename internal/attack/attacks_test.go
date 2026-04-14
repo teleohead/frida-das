@@ -1,9 +1,11 @@
-package sim
+package attack_test
 
 import (
 	"crypto/sha256"
 	"testing"
 
+	"github.com/teleohead/frida-das/internal/attack"
+	"github.com/teleohead/frida-das/internal/prover"
 	"github.com/teleohead/frida-das/pkg/frida"
 )
 
@@ -27,7 +29,7 @@ var (
 
 func mustCommit(t *testing.T) *frida.Commitment {
 	t.Helper()
-	comm, _, err := frida.NewBuilder(testParams).CommitAndProve(testData)
+	comm, _, err := prover.NewBuilder(testParams).CommitAndProve(testData)
 	if err != nil {
 		t.Fatalf("CommitAndProve: %v", err)
 	}
@@ -58,7 +60,7 @@ func TestCorruptFinalLayer(t *testing.T) {
 	rest := make([]frida.Scalar, len(comm.FinalLayer)-1)
 	copy(rest, comm.FinalLayer[1:])
 
-	corruptFinalLayer(comm)
+	attack.CorruptFinalLayer(comm)
 
 	if comm.FinalLayer[0] == orig {
 		t.Error("FinalLayer[0] was not changed")
@@ -79,7 +81,7 @@ func TestCorruptMerkleSibling(t *testing.T) {
 	}
 
 	orig := path.Siblings[0]
-	corruptMerkleSibling(path)
+	attack.CorruptMerkleSibling(path)
 
 	for i, b := range path.Siblings[0] {
 		if b != orig[i]^0xFF {
@@ -94,7 +96,7 @@ func TestDecoupleFiatShamir(t *testing.T) {
 	origRoots := make([]frida.Hash, len(comm.Roots))
 	copy(origRoots, comm.Roots)
 
-	decoupleFiatShamir(comm)
+	attack.DecoupleFiatShamir(comm)
 
 	// Roots[0] should be replaced with SHA-256 of the hardcoded nonce.
 	nonce := [8]byte{0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe}
@@ -112,13 +114,13 @@ func TestDecoupleFiatShamir(t *testing.T) {
 // No error should be raised if the input is empty.
 func TestAttacks_NoPanicOnEmpty(t *testing.T) {
 	t.Run("CorruptFinalLayer", func(t *testing.T) {
-		corruptFinalLayer(&frida.Commitment{})
+		attack.CorruptFinalLayer(&frida.Commitment{})
 	})
 	t.Run("CorruptMerkleSibling", func(t *testing.T) {
-		corruptMerkleSibling(&frida.MerklePath{})
+		attack.CorruptMerkleSibling(&frida.MerklePath{})
 	})
 	t.Run("DecoupleFiatShamir", func(t *testing.T) {
-		decoupleFiatShamir(&frida.Commitment{})
+		attack.DecoupleFiatShamir(&frida.Commitment{})
 	})
 }
 
@@ -130,7 +132,7 @@ func TestMerkleProofsVerify(t *testing.T) {
 	for qi, qp := range comm.QueryProofs {
 		for li, layer := range qp.Layers {
 			for pi, path := range layer.Paths {
-				if !frida.VerifyMerkleProof(comm.Roots[li], path) {
+				if !prover.VerifyMerkleProof(comm.Roots[li], path) {
 					t.Errorf("query %d layer %d path %d: proof should be valid", qi, li, pi)
 				}
 			}
@@ -147,9 +149,9 @@ func TestCorruptMerkleSibling_BreaksProof(t *testing.T) {
 	}
 
 	root := comm.Roots[li]
-	corruptMerkleSibling(path)
+	attack.CorruptMerkleSibling(path)
 
-	if frida.VerifyMerkleProof(root, *path) {
+	if prover.VerifyMerkleProof(root, *path) {
 		t.Error("corrupted proof should not verify")
 	}
 }
@@ -165,10 +167,10 @@ func TestDecoupleFiatShamir_BreaksProof(t *testing.T) {
 		}
 	}
 
-	decoupleFiatShamir(comm)
+	attack.DecoupleFiatShamir(comm)
 
 	for i, p := range paths {
-		if frida.VerifyMerkleProof(comm.Roots[0], p) {
+		if prover.VerifyMerkleProof(comm.Roots[0], p) {
 			t.Errorf("path %d: proof should not verify against a fake root", i)
 		}
 	}
@@ -177,12 +179,12 @@ func TestDecoupleFiatShamir_BreaksProof(t *testing.T) {
 // This function tests that the corruption of the final layer leaves the proofs intact
 func TestCorruptFinalLayer_LeavesProofsIntact(t *testing.T) {
 	comm := mustCommit(t)
-	corruptFinalLayer(comm)
+	attack.CorruptFinalLayer(comm)
 
 	for qi, qp := range comm.QueryProofs {
 		for li, layer := range qp.Layers {
 			for pi, path := range layer.Paths {
-				if !frida.VerifyMerkleProof(comm.Roots[li], path) {
+				if !prover.VerifyMerkleProof(comm.Roots[li], path) {
 					t.Errorf("query %d layer %d path %d: proof should still be valid", qi, li, pi)
 				}
 			}

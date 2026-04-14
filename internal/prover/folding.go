@@ -1,26 +1,30 @@
 // folding.go implements the FRI folding logic from Section 4.1 of the FRIDA paper.
 
-package frida
+package prover
 
-// algebraicHash implements FRI Algebraic Hash Function H_{rho_i}[G_{i-1}]
+import (
+	"github.com/teleohead/frida-das/pkg/frida"
+)
+
+// AlgebraicHash implements FRI Algebraic Hash Function H_{rho_i}[G_{i-1}]
 // This function is defined in Section 4.1 of the FRIDA Paper.
-func algebraicHash(
-	prev []Scalar, // G_{i-1}
-	next []Scalar, // G_i
-	domain []Scalar, // L_{i-1}
-	rho *Scalar, // rho_i
+func AlgebraicHash(
+	prev []frida.Scalar, // G_{i-1}
+	next []frida.Scalar, // G_i
+	domain []frida.Scalar, // L_{i-1}
+	rho *frida.Scalar, // rho_i
 	foldingFactor int,
 	preimageBuf []int,
-	xs []Scalar,
-	fs []Scalar,
-	weights []Scalar,
-	diffs []Scalar,
+	xs []frida.Scalar,
+	fs []frida.Scalar,
+	weights []frida.Scalar,
+	diffs []frida.Scalar,
 ) {
 	prevSize := len(prev)
 	nextSize := prevSize / foldingFactor
 
 	for c := 0; c < nextSize; c++ {
-		writePreimageIndices(c, prevSize, foldingFactor, preimageBuf)
+		WritePreimageIndices(c, prevSize, foldingFactor, preimageBuf)
 
 		for k := 0; k < foldingFactor; k++ {
 			index := preimageBuf[k]
@@ -33,9 +37,9 @@ func algebraicHash(
 	}
 }
 
-// writePreimageIndices writes the F preimage indices into the buf.
+// WritePreimageIndices writes the F preimage indices into the buf.
 // For a coset index c in L_i, the F preimages are c + k*n/F, k = 0...(F-1)
-func writePreimageIndices(c, domainSize, foldingFactor int, buf []int) {
+func WritePreimageIndices(c, domainSize, foldingFactor int, buf []int) {
 	stride := domainSize / foldingFactor
 	for k := 0; k < foldingFactor; k++ {
 		buf[k] = c + k*stride

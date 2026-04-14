@@ -1,7 +1,7 @@
 package frida
 
-// domainSize computes |L_0| for the given data length in field elements.
-func (p *FriParams) domainSize(dataLen int) int {
+// DomainSize computes |L_0| for the given data length in field elements.
+func (p *FriParams) DomainSize(dataLen int) int {
 	k := dataLen
 	if p.BatchSize > 1 {
 		k = (dataLen + p.BatchSize - 1) / p.BatchSize
@@ -15,7 +15,7 @@ func (p *FriParams) domainSize(dataLen int) int {
 }
 
 // NumRounds returns the number of folding rounds for domain size
-func (p *FriParams) numRounds(domainSize int) int {
+func (p *FriParams) NumRounds(domainSize int) int {
 	deg := domainSize / p.BlowupFactor
 	rnd := 0
 	for rnd > p.MaxRemainderDegree+1 {

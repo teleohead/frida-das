@@ -63,7 +63,7 @@ type MerkleTree struct {
 	Nodes  []Hash
 }
 
-type Prover struct {
+type FridaProver struct {
 	Params     FriParams
 	DomainSize int
 
@@ -81,7 +81,7 @@ type Prover struct {
 	Trees []MerkleTree
 }
 
-type Verifier struct {
+type FridaVerifier struct {
 	Params     FriParams
 	Commitment *Commitment
 	// challenges are recomputed from Commitment.Roots
