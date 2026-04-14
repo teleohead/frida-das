@@ -1,23 +1,21 @@
-package prover
+package frida
 
 import (
 	"fmt"
-
-	"github.com/teleohead/frida-das/pkg/frida"
 )
 
 // Builder implements frida.FridaBuilder
 type Builder struct {
-	Params frida.FriParams
+	Params FriParams
 }
 
 // NewBuilder initialises a new Builder with the given params.
-func NewBuilder(params frida.FriParams) *Builder {
+func NewBuilder(params FriParams) *Builder {
 	return &Builder{Params: params}
 }
 
 // CommitAndProve executes the full non-interactive Batched FRI protocol.
-func (b *Builder) CommitAndProve(data []byte) (*frida.Commitment, *frida.FridaProver, error) {
+func (b *Builder) CommitAndProve(data []byte) (*Commitment, *Prover, error) {
 	params := &b.Params
 	ff := params.FoldingFactor
 
@@ -27,54 +25,54 @@ func (b *Builder) CommitAndProve(data []byte) (*frida.Commitment, *frida.FridaPr
 	}
 
 	if rem := len(scalars) % params.BatchSize; rem != 0 {
-		scalars = append(scalars, make([]frida.Scalar, params.BatchSize-rem)...)
+		scalars = append(scalars, make([]Scalar, params.BatchSize-rem)...)
 	}
 
 	deg := len(scalars) / params.BatchSize
 	domainSize := deg * params.BlowupFactor
 
-	polys := make([][]frida.Scalar, params.BatchSize)
+	polys := make([][]Scalar, params.BatchSize)
 	for j := 0; j < params.BatchSize; j++ {
 		polys[j] = scalars[j*deg : (j+1)*deg]
 	}
 
-	domain := GenerateDomain(domainSize)
-	batchOracle := make([]frida.Scalar, params.BatchSize*domainSize)
-	RSEncodeBatch(polys, domain, batchOracle)
+	domain := generateDomain(domainSize)
+	batchOracle := make([]Scalar, params.BatchSize*domainSize)
+	rsEncodeBatch(polys, domain, batchOracle)
 
 	batchLeaves := make([][]byte, domainSize)
 	for s := 0; s < domainSize; s++ {
 		batchLeaves[s] = serializeSymbol(batchOracle, s, params.BatchSize)
 	}
-	batchTree := BuildMerkleTree(batchLeaves)
+	batchTree := buildMerkleTree(batchLeaves)
 
-	var hst frida.Hash
+	var hst Hash
 	hst = chainHash(batchTree.Root, hst, 0)
 	xi := deriveFieldChallenge(hst)
 
-	g0 := make([]frida.Scalar, domainSize)
-	BatchCombine(batchOracle, &xi, params.BatchSize, domainSize, g0)
+	g0 := make([]Scalar, domainSize)
+	batchCombine(batchOracle, &xi, params.BatchSize, domainSize, g0)
 
 	g0Leaves := make([][]byte, domainSize)
 	for s := 0; s < domainSize; s++ {
 		g0Leaves[s] = scalarToBytes(&g0[s])
 	}
-	g0Tree := BuildMerkleTree(g0Leaves)
+	g0Tree := buildMerkleTree(g0Leaves)
 
 	numRounds := computeNumRounds(deg, ff, params.MaxRemainderDegree)
 
-	trees := make([]frida.MerkleTree, numRounds+2)
+	trees := make([]MerkleTree, numRounds+2)
 	trees[0] = batchTree
 	trees[1] = g0Tree
 
-	foldedOracles := make([][]frida.Scalar, numRounds)
-	challenges := make([]frida.Scalar, numRounds)
+	foldedOracles := make([][]Scalar, numRounds)
+	challenges := make([]Scalar, numRounds)
 
 	scratchPreimage := make([]int, ff)
-	scratchXs := make([]frida.Scalar, ff)
-	scratchFs := make([]frida.Scalar, ff)
-	scratchWeights := make([]frida.Scalar, ff)
-	scratchDiffs := make([]frida.Scalar, ff)
+	scratchXs := make([]Scalar, ff)
+	scratchFs := make([]Scalar, ff)
+	scratchWeights := make([]Scalar, ff)
+	scratchDiffs := make([]Scalar, ff)
 
 	prev := g0
 	prevRoot := g0Tree.Root
@@ -85,10 +83,10 @@ func (b *Builder) CommitAndProve(data []byte) (*frida.Commitment, *frida.FridaPr
 		challenges[r] = deriveFieldChallenge(hst)
 
 		nextDomainSize := currentDomainSize / ff
-		next := make([]frida.Scalar, nextDomainSize)
-		currentDomain := GenerateDomain(currentDomainSize)
+		next := make([]Scalar, nextDomainSize)
+		currentDomain := generateDomain(currentDomainSize)
 
-		AlgebraicHash(prev, next, currentDomain, &challenges[r], ff, scratchPreimage, scratchXs, scratchFs, scratchWeights, scratchDiffs)
+		algebraicHash(prev, next, currentDomain, &challenges[r], ff, scratchPreimage, scratchXs, scratchFs, scratchWeights, scratchDiffs)
 
 		foldedOracles[r] = next
 
@@ -96,7 +94,7 @@ func (b *Builder) CommitAndProve(data []byte) (*frida.Commitment, *frida.FridaPr
 		for s := 0; s < nextDomainSize; s++ {
 			layerLeaves[s] = scalarToBytes(&next[s])
 		}
-		layerTree := BuildMerkleTree(layerLeaves)
+		layerTree := buildMerkleTree(layerLeaves)
 		trees[r+2] = layerTree
 
 		prevRoot = layerTree.Root
@@ -106,7 +104,7 @@ func (b *Builder) CommitAndProve(data []byte) (*frida.Commitment, *frida.FridaPr
 
 	finalLayer := prev
 
-	prover := &frida.FridaProver{
+	prover := &Prover{
 		Params:         *params,
 		DomainSize:     domainSize,
 		BatchOracle:    batchOracle,
@@ -118,7 +116,7 @@ func (b *Builder) CommitAndProve(data []byte) (*frida.Commitment, *frida.FridaPr
 	}
 
 	queryPositions := deriveQueryPositions(prevRoot, hst, domainSize, params.NumQueries)
-	queryProofs := make([]frida.FriProof, params.NumQueries)
+	queryProofs := make([]FriProof, params.NumQueries)
 
 	for i, pos := range queryPositions {
 		proof, err := openSingle(prover, pos)
@@ -131,12 +129,12 @@ func (b *Builder) CommitAndProve(data []byte) (*frida.Commitment, *frida.FridaPr
 		queryProofs[i] = *proof
 	}
 
-	roots := make([]frida.Hash, len(trees))
+	roots := make([]Hash, len(trees))
 	for i := range trees {
 		roots[i] = trees[i].Root
 	}
 
-	comm := &frida.Commitment{
+	comm := &Commitment{
 		Roots:          roots,
 		FinalLayer:     finalLayer,
 		QueryProofs:    queryProofs,
