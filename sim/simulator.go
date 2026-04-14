@@ -5,7 +5,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/teleohead/frida-das/internal/prover"
 	"github.com/teleohead/frida-das/pkg/frida"
 )
 
@@ -17,7 +16,7 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 	// COMMIT
 	tCommitStart := time.Now()
 
-	builder := prover.NewBuilder(cfg.Params)
+	builder := frida.NewBuilder(cfg.Params)
 	commitment, proverState, err := builder.CommitAndProve(cfg.Data)
 
 	if err != nil {
@@ -41,7 +40,7 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 	for i := 0; i < proofSampleCount; i++ {
 		pos := i % domainSize
 		start := time.Now()
-		proof, err := prover.Open(proverState, []int{pos})
+		proof, err := frida.Open(proverState, []int{pos})
 		totalProofDuration += time.Since(start)
 		if err != nil {
 			return nil, fmt.Errorf("proof measurement at pos %d: %w", pos, err)

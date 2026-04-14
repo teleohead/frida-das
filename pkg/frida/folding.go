@@ -1,24 +1,20 @@
 // folding.go implements the FRI folding logic from Section 4.1 of the FRIDA paper.
 
-package prover
-
-import (
-	"github.com/teleohead/frida-das/pkg/frida"
-)
+package frida
 
 // AlgebraicHash implements FRI Algebraic Hash Function H_{rho_i}[G_{i-1}]
 // This function is defined in Section 4.1 of the FRIDA Paper.
 func AlgebraicHash(
-	prev []frida.Scalar, // G_{i-1}
-	next []frida.Scalar, // G_i
-	domain []frida.Scalar, // L_{i-1}
-	rho *frida.Scalar, // rho_i
+	prev []Scalar,   // G_{i-1}
+	next []Scalar,   // G_i
+	domain []Scalar, // L_{i-1}
+	rho *Scalar,     // rho_i
 	foldingFactor int,
 	preimageBuf []int,
-	xs []frida.Scalar,
-	fs []frida.Scalar,
-	weights []frida.Scalar,
-	diffs []frida.Scalar,
+	xs []Scalar,
+	fs []Scalar,
+	weights []Scalar,
+	diffs []Scalar,
 ) {
 	prevSize := len(prev)
 	nextSize := prevSize / foldingFactor

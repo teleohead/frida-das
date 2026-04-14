@@ -1,16 +1,14 @@
-package prover
+package frida
 
 import (
 	"crypto/sha256"
-
-	"github.com/teleohead/frida-das/pkg/frida"
 )
 
 // Builds a Merkle tree from the given leaves and returns the tree structure.
-func BuildMerkleTree(leaves [][]byte) frida.MerkleTree {
+func BuildMerkleTree(leaves [][]byte) MerkleTree {
 
 	n := len(leaves)
-	nodes := make([]frida.Hash, 2*n)
+	nodes := make([]Hash, 2*n)
 
 	for i := 0; i < n; i++ {
 		// Hash each leaf
@@ -28,7 +26,7 @@ func BuildMerkleTree(leaves [][]byte) frida.MerkleTree {
 		nodes[i] = sha256.Sum256(combined[:])
 	}
 
-	return frida.MerkleTree{
+	return MerkleTree{
 		Root:   nodes[1],
 		Leaves: leaves,
 		Nodes:  nodes,
@@ -36,8 +34,8 @@ func BuildMerkleTree(leaves [][]byte) frida.MerkleTree {
 }
 
 // Creates a merkle proof for a given leaf index in the tree.
-func GetMerkleProof(tree frida.MerkleTree, index int) frida.MerklePath {
-	proof := make([]frida.Hash, 0, 32)
+func GetMerkleProof(tree MerkleTree, index int) MerklePath {
+	proof := make([]Hash, 0, 32)
 	n := len(tree.Leaves)
 
 	pos := n + index
@@ -53,7 +51,7 @@ func GetMerkleProof(tree frida.MerkleTree, index int) frida.MerklePath {
 		pos /= 2
 	}
 
-	path := frida.MerklePath{
+	path := MerklePath{
 		LeafValue: tree.Leaves[index],
 		Siblings:  proof,
 		Index:     index,
@@ -63,7 +61,7 @@ func GetMerkleProof(tree frida.MerkleTree, index int) frida.MerklePath {
 }
 
 // Verifies a Merkle proof.
-func VerifyMerkleProof(root frida.Hash, path frida.MerklePath) bool {
+func VerifyMerkleProof(root Hash, path MerklePath) bool {
 	hash := sha256.Sum256(path.LeafValue)
 	pos := path.NumLeaves + path.Index
 	for _, sibling := range path.Siblings {

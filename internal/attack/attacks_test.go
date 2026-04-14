@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/teleohead/frida-das/internal/attack"
-	"github.com/teleohead/frida-das/internal/prover"
 	"github.com/teleohead/frida-das/pkg/frida"
 )
 
@@ -29,7 +28,7 @@ var (
 
 func mustCommit(t *testing.T) *frida.Commitment {
 	t.Helper()
-	comm, _, err := prover.NewBuilder(testParams).CommitAndProve(testData)
+	comm, _, err := frida.NewBuilder(testParams).CommitAndProve(testData)
 	if err != nil {
 		t.Fatalf("CommitAndProve: %v", err)
 	}
@@ -132,7 +131,7 @@ func TestMerkleProofsVerify(t *testing.T) {
 	for qi, qp := range comm.QueryProofs {
 		for li, layer := range qp.Layers {
 			for pi, path := range layer.Paths {
-				if !prover.VerifyMerkleProof(comm.Roots[li], path) {
+				if !frida.VerifyMerkleProof(comm.Roots[li], path) {
 					t.Errorf("query %d layer %d path %d: proof should be valid", qi, li, pi)
 				}
 			}
@@ -151,7 +150,7 @@ func TestCorruptMerkleSibling_BreaksProof(t *testing.T) {
 	root := comm.Roots[li]
 	attack.CorruptMerkleSibling(path)
 
-	if prover.VerifyMerkleProof(root, *path) {
+	if frida.VerifyMerkleProof(root, *path) {
 		t.Error("corrupted proof should not verify")
 	}
 }
@@ -170,7 +169,7 @@ func TestDecoupleFiatShamir_BreaksProof(t *testing.T) {
 	attack.DecoupleFiatShamir(comm)
 
 	for i, p := range paths {
-		if prover.VerifyMerkleProof(comm.Roots[0], p) {
+		if frida.VerifyMerkleProof(comm.Roots[0], p) {
 			t.Errorf("path %d: proof should not verify against a fake root", i)
 		}
 	}
@@ -184,7 +183,7 @@ func TestCorruptFinalLayer_LeavesProofsIntact(t *testing.T) {
 	for qi, qp := range comm.QueryProofs {
 		for li, layer := range qp.Layers {
 			for pi, path := range layer.Paths {
-				if !prover.VerifyMerkleProof(comm.Roots[li], path) {
+				if !frida.VerifyMerkleProof(comm.Roots[li], path) {
 					t.Errorf("query %d layer %d path %d: proof should still be valid", qi, li, pi)
 				}
 			}

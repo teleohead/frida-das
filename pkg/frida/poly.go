@@ -1,25 +1,23 @@
-package prover
+package frida
 
 import (
 	"math/big"
-
-	"github.com/teleohead/frida-das/pkg/frida"
 )
 
-func GenerateDomain(domainSize int) []frida.Scalar {
-	domain := make([]frida.Scalar, domainSize)
+func GenerateDomain(domainSize int) []Scalar {
+	domain := make([]Scalar, domainSize)
 
 	// Goldilocks multiplicative generator: g = 7
-	var g frida.Scalar
+	var g Scalar
 	g.SetUint64(7)
 
 	// p - 1 = 2^64 - 2^32
-	pm1 := uint64(frida.GoldilocksPrime - 1)
+	pm1 := uint64(GoldilocksPrime - 1)
 	// e = (p - 1) / n
 	exp := pm1 / uint64(domainSize)
 
 	// omega = g^e
-	var omega frida.Scalar
+	var omega Scalar
 	omega.Exp(g, new(big.Int).SetUint64(exp))
 
 	// domain[0] = 1
@@ -38,12 +36,12 @@ func GenerateDomain(domainSize int) []frida.Scalar {
 // weights and diffs are pre-allocated buffers to increase performance.
 // See pp. 504, https://people.maths.ox.ac.uk/trefethen/barycentric.pdf
 func Interpolate(
-	x *frida.Scalar,
-	xs []frida.Scalar,
-	fs []frida.Scalar,
-	weights []frida.Scalar,
-	diffs []frida.Scalar,
-) frida.Scalar {
+	x *Scalar,
+	xs []Scalar,
+	fs []Scalar,
+	weights []Scalar,
+	diffs []Scalar,
+) Scalar {
 	n := len(xs)
 
 	// w_j = 1 / PI_{k≠j} (x_j - x_k)
@@ -53,7 +51,7 @@ func Interpolate(
 			if k == j {
 				continue
 			}
-			var diff frida.Scalar
+			var diff Scalar
 			diff.Sub(&xs[j], &xs[k])
 			weights[j].Mul(&weights[j], &diff)
 		}
@@ -75,28 +73,28 @@ func Interpolate(
 	}
 
 	// l(x) = PI_{j=0}^{n-1} (diffs_j)
-	var l frida.Scalar
+	var l Scalar
 	l.SetOne()
 	for j := 0; j < n; j++ {
 		l.Mul(&l, &diffs[j])
 	}
 
 	// sum = SUM_{j=0}^{n-1} [ w_j * f_j / (x - x_j) ]
-	var sum frida.Scalar
+	var sum Scalar
 	sum.SetZero()
 
 	// reusable term [ w_j * f_j / (x - x_j) ] for summation
-	var term frida.Scalar
+	var term Scalar
 	for j := 0; j < n; j++ {
 		term.Mul(&weights[j], &fs[j])
-		var invDiff frida.Scalar
+		var invDiff Scalar
 		invDiff.Inverse(&diffs[j]) // we have confirmed diff_j != 0
 		term.Mul(&term, &invDiff)
 		sum.Add(&sum, &term)
 	}
 
 	// p(x) = l(x) * sum
-	var result frida.Scalar
+	var result Scalar
 	result.Mul(&l, &sum)
 
 	return result
@@ -104,11 +102,11 @@ func Interpolate(
 
 // BatchCombine computes G_0 = SUM_{j=0}^{B-1} xi^j * G_j for batched FRI.
 func BatchCombine(
-	interleavedBatch []frida.Scalar, // is in interleaved layout (B * domainSize elements)
-	xi *frida.Scalar, // batching challenge xi
+	interleavedBatch []Scalar, // is in interleaved layout (B * domainSize elements)
+	xi *Scalar, // batching challenge xi
 	batchSize int,
 	domainSize int,
-	out []frida.Scalar, // is the combined codeword G_0, len = domainSize
+	out []Scalar, // is the combined codeword G_0, len = domainSize
 ) {
 	lastJ := batchSize - 1
 	for s := 0; s < domainSize; s++ {
@@ -126,13 +124,13 @@ func BatchCombine(
 // It produces the interleaved codeword.
 // This matches the storage.InterleavedSlab layout.
 func RSEncodeBatch(
-	polys [][]frida.Scalar,
-	domain []frida.Scalar, // L_0
-	out []frida.Scalar, // must be pre-allocated with len = len(polys) * len(domain), interleaved!
+	polys [][]Scalar,
+	domain []Scalar, // L_0
+	out []Scalar, // must be pre-allocated with len = len(polys) * len(domain), interleaved!
 ) {
 	batchSize := len(polys)   // B
 	domainSize := len(domain) // |L_0|
-	buf := make([]frida.Scalar, domainSize)
+	buf := make([]Scalar, domainSize)
 	for j := 0; j < batchSize; j++ {
 		RSEncode(polys[j], domain, buf)
 		for idx := 0; idx < domainSize; idx++ {
@@ -144,9 +142,9 @@ func RSEncodeBatch(
 // RSEncode implements Reed-Solomon Encoding.
 // We use Horner's Method f(x) = c_0 + x(c_1 + x(c_2 + ...)) to reduce the number of operations.
 func RSEncode(
-	poly []frida.Scalar, // a polynomial represented by an array of its coefficients
-	domain []frida.Scalar,
-	out []frida.Scalar, // must be pre-allocated with len = len(domain)
+	poly []Scalar, // a polynomial represented by an array of its coefficients
+	domain []Scalar,
+	out []Scalar, // must be pre-allocated with len = len(domain)
 ) {
 	if len(poly) == 0 {
 		return

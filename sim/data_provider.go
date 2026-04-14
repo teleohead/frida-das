@@ -1,7 +1,6 @@
 package sim
 
 import (
-	"github.com/teleohead/frida-das/internal/prover"
 	"github.com/teleohead/frida-das/pkg/frida"
 )
 
@@ -20,7 +19,7 @@ func NewHonestProvider() *HonestProvider {
 }
 
 func (hp *HonestProvider) ProvideResponse(p *frida.FridaProver, pos int) SampleResponse {
-	proof, err := prover.Open(p, []int{pos})
+	proof, err := frida.Open(p, []int{pos})
 
 	if err != nil {
 		return SampleResponse{Position: pos, Err: err}
