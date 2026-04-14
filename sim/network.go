@@ -7,7 +7,7 @@ import (
 )
 
 type Network struct {
-	Prover       *frida.FridaProver
+	Prover       *frida.Prover
 	DataProvider DataProvider
 
 	RequestChan <-chan SampleRequest
@@ -16,7 +16,7 @@ type Network struct {
 	wg sync.WaitGroup
 }
 
-func NewNetwork(p *frida.FridaProver, dp DataProvider, requestChan <-chan SampleRequest, numWorkers int) *Network {
+func NewNetwork(p *frida.Prover, dp DataProvider, requestChan <-chan SampleRequest, numWorkers int) *Network {
 	return &Network{
 		Prover:       p,
 		DataProvider: dp,

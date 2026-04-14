@@ -15,7 +15,7 @@ func NewBuilder(params FriParams) *Builder {
 }
 
 // CommitAndProve executes the full non-interactive Batched FRI protocol.
-func (b *Builder) CommitAndProve(data []byte) (*Commitment, *FridaProver, error) {
+func (b *Builder) CommitAndProve(data []byte) (*Commitment, *Prover, error) {
 	params := &b.Params
 	ff := params.FoldingFactor
 
@@ -36,28 +36,28 @@ func (b *Builder) CommitAndProve(data []byte) (*Commitment, *FridaProver, error)
 		polys[j] = scalars[j*deg : (j+1)*deg]
 	}
 
-	domain := GenerateDomain(domainSize)
+	domain := generateDomain(domainSize)
 	batchOracle := make([]Scalar, params.BatchSize*domainSize)
-	RSEncodeBatch(polys, domain, batchOracle)
+	rsEncodeBatch(polys, domain, batchOracle)
 
 	batchLeaves := make([][]byte, domainSize)
 	for s := 0; s < domainSize; s++ {
 		batchLeaves[s] = serializeSymbol(batchOracle, s, params.BatchSize)
 	}
-	batchTree := BuildMerkleTree(batchLeaves)
+	batchTree := buildMerkleTree(batchLeaves)
 
 	var hst Hash
 	hst = chainHash(batchTree.Root, hst, 0)
 	xi := deriveFieldChallenge(hst)
 
 	g0 := make([]Scalar, domainSize)
-	BatchCombine(batchOracle, &xi, params.BatchSize, domainSize, g0)
+	batchCombine(batchOracle, &xi, params.BatchSize, domainSize, g0)
 
 	g0Leaves := make([][]byte, domainSize)
 	for s := 0; s < domainSize; s++ {
 		g0Leaves[s] = scalarToBytes(&g0[s])
 	}
-	g0Tree := BuildMerkleTree(g0Leaves)
+	g0Tree := buildMerkleTree(g0Leaves)
 
 	numRounds := computeNumRounds(deg, ff, params.MaxRemainderDegree)
 
@@ -84,9 +84,9 @@ func (b *Builder) CommitAndProve(data []byte) (*Commitment, *FridaProver, error)
 
 		nextDomainSize := currentDomainSize / ff
 		next := make([]Scalar, nextDomainSize)
-		currentDomain := GenerateDomain(currentDomainSize)
+		currentDomain := generateDomain(currentDomainSize)
 
-		AlgebraicHash(prev, next, currentDomain, &challenges[r], ff, scratchPreimage, scratchXs, scratchFs, scratchWeights, scratchDiffs)
+		algebraicHash(prev, next, currentDomain, &challenges[r], ff, scratchPreimage, scratchXs, scratchFs, scratchWeights, scratchDiffs)
 
 		foldedOracles[r] = next
 
@@ -94,7 +94,7 @@ func (b *Builder) CommitAndProve(data []byte) (*Commitment, *FridaProver, error)
 		for s := 0; s < nextDomainSize; s++ {
 			layerLeaves[s] = scalarToBytes(&next[s])
 		}
-		layerTree := BuildMerkleTree(layerLeaves)
+		layerTree := buildMerkleTree(layerLeaves)
 		trees[r+2] = layerTree
 
 		prevRoot = layerTree.Root
@@ -104,7 +104,7 @@ func (b *Builder) CommitAndProve(data []byte) (*Commitment, *FridaProver, error)
 
 	finalLayer := prev
 
-	prover := &FridaProver{
+	prover := &Prover{
 		Params:         *params,
 		DomainSize:     domainSize,
 		BatchOracle:    batchOracle,

@@ -5,7 +5,7 @@ import (
 )
 
 // Builds a Merkle tree from the given leaves and returns the tree structure.
-func BuildMerkleTree(leaves [][]byte) MerkleTree {
+func buildMerkleTree(leaves [][]byte) MerkleTree {
 
 	n := len(leaves)
 	nodes := make([]Hash, 2*n)
@@ -34,7 +34,7 @@ func BuildMerkleTree(leaves [][]byte) MerkleTree {
 }
 
 // Creates a merkle proof for a given leaf index in the tree.
-func GetMerkleProof(tree MerkleTree, index int) MerklePath {
+func getMerkleProof(tree MerkleTree, index int) MerklePath {
 	proof := make([]Hash, 0, 32)
 	n := len(tree.Leaves)
 

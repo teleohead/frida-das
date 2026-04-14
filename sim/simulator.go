@@ -17,7 +17,7 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 	tCommitStart := time.Now()
 
 	builder := frida.NewBuilder(cfg.Params)
-	commitment, proverState, err := builder.CommitAndProve(cfg.Data)
+	commitment, prover, err := builder.CommitAndProve(cfg.Data)
 
 	if err != nil {
 		return nil, fmt.Errorf("commit failed: %w", err)
@@ -25,7 +25,7 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 
 	commitDuration := time.Since(tCommitStart)
 
-	domainSize := proverState.DomainSize
+	domainSize := prover.DomainSize
 	receptionNeeded := domainSize / cfg.Params.BlowupFactor
 
 	// SINGLE PROOF METRICS
@@ -40,7 +40,7 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 	for i := 0; i < proofSampleCount; i++ {
 		pos := i % domainSize
 		start := time.Now()
-		proof, err := frida.Open(proverState, []int{pos})
+		proof, err := prover.Open([]int{pos})
 		totalProofDuration += time.Since(start)
 		if err != nil {
 			return nil, fmt.Errorf("proof measurement at pos %d: %w", pos, err)
@@ -65,7 +65,7 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 		dp = NewHonestProvider()
 	}
 
-	net := NewNetwork(proverState, dp, requestChan, cfg.NetworkWorkers)
+	net := NewNetwork(prover, dp, requestChan, cfg.NetworkWorkers)
 
 	nodes := make([]LightNode, cfg.NumNodes)
 

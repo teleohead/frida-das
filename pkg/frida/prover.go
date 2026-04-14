@@ -5,7 +5,7 @@ import (
 )
 
 // Open generates FriProofs for the given positions.
-func Open(prover *FridaProver, positions []int) (*FriProof, error) {
+func (prover *Prover) Open(positions []int) (*FriProof, error) {
 	if len(positions) == 0 {
 		return nil, fmt.Errorf("no positions given")
 	}
@@ -24,7 +24,7 @@ func Open(prover *FridaProver, positions []int) (*FriProof, error) {
 		currentDomainSize := prover.DomainSize
 		for layer := 0; layer < numLayers; layer++ {
 			leafIdx := currentPos % len(prover.Trees[layer].Leaves)
-			path := GetMerkleProof(prover.Trees[layer], leafIdx)
+			path := getMerkleProof(prover.Trees[layer], leafIdx)
 			layers[layer].Paths = append(layers[layer].Paths, path)
 			if layer >= 1 { // fold
 				currentDomainSize /= prover.Params.FoldingFactor
@@ -38,7 +38,7 @@ func Open(prover *FridaProver, positions []int) (*FriProof, error) {
 }
 
 // openSingle generates a proof for exactly one position.
-func openSingle(prover *FridaProver, pos int) (*FriProof, error) {
+func openSingle(prover *Prover, pos int) (*FriProof, error) {
 	numLayers := len(prover.Trees)
 	layers := make([]LayerProof, numLayers)
 
@@ -47,7 +47,7 @@ func openSingle(prover *FridaProver, pos int) (*FriProof, error) {
 
 	for layer := 0; layer < numLayers; layer++ {
 		leafIdx := currentPos % len(prover.Trees[layer].Leaves)
-		path := GetMerkleProof(prover.Trees[layer], leafIdx)
+		path := getMerkleProof(prover.Trees[layer], leafIdx)
 		layers[layer] = LayerProof{Paths: []MerklePath{path}}
 		if layer >= 1 { // G_0 or folded layers
 			currentDomainSize /= prover.Params.FoldingFactor

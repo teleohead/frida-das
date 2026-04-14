@@ -4,7 +4,7 @@ import (
 	"math/big"
 )
 
-func GenerateDomain(domainSize int) []Scalar {
+func generateDomain(domainSize int) []Scalar {
 	domain := make([]Scalar, domainSize)
 
 	// Goldilocks multiplicative generator: g = 7
@@ -35,7 +35,7 @@ func GenerateDomain(domainSize int) []Scalar {
 // We use Barycentric Lagrange Interpolation. This is fast when F is small.
 // weights and diffs are pre-allocated buffers to increase performance.
 // See pp. 504, https://people.maths.ox.ac.uk/trefethen/barycentric.pdf
-func Interpolate(
+func interpolate(
 	x *Scalar,
 	xs []Scalar,
 	fs []Scalar,
@@ -101,7 +101,7 @@ func Interpolate(
 }
 
 // BatchCombine computes G_0 = SUM_{j=0}^{B-1} xi^j * G_j for batched FRI.
-func BatchCombine(
+func batchCombine(
 	interleavedBatch []Scalar, // is in interleaved layout (B * domainSize elements)
 	xi *Scalar, // batching challenge xi
 	batchSize int,
@@ -123,7 +123,7 @@ func BatchCombine(
 // RSEncodeBatch encodes B polynomials, see in Section 4.3 of the paper.
 // It produces the interleaved codeword.
 // This matches the storage.InterleavedSlab layout.
-func RSEncodeBatch(
+func rsEncodeBatch(
 	polys [][]Scalar,
 	domain []Scalar, // L_0
 	out []Scalar, // must be pre-allocated with len = len(polys) * len(domain), interleaved!
@@ -132,7 +132,7 @@ func RSEncodeBatch(
 	domainSize := len(domain) // |L_0|
 	buf := make([]Scalar, domainSize)
 	for j := 0; j < batchSize; j++ {
-		RSEncode(polys[j], domain, buf)
+		rsEncode(polys[j], domain, buf)
 		for idx := 0; idx < domainSize; idx++ {
 			out[idx*batchSize+j] = buf[idx]
 		}
@@ -141,7 +141,7 @@ func RSEncodeBatch(
 
 // RSEncode implements Reed-Solomon Encoding.
 // We use Horner's Method f(x) = c_0 + x(c_1 + x(c_2 + ...)) to reduce the number of operations.
-func RSEncode(
+func rsEncode(
 	poly []Scalar, // a polynomial represented by an array of its coefficients
 	domain []Scalar,
 	out []Scalar, // must be pre-allocated with len = len(domain)
