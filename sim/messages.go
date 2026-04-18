@@ -1,6 +1,10 @@
 package sim
 
-import "github.com/teleohead/frida-das/pkg/frida"
+import (
+	"time"
+
+	"github.com/teleohead/frida-das/pkg/frida"
+)
 
 // SampleRequest is sent from a light node to a network.
 type SampleRequest struct {
@@ -23,5 +27,6 @@ type NodeResult struct {
 	SampledPositions []int
 	AcceptedCount    int
 	RejectedCount    int
+	TotalVerifyNs    time.Duration
 	Err              error
 }

@@ -3,6 +3,7 @@ package sim
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"time"
 
 	"github.com/teleohead/frida-das/pkg/frida"
 )
@@ -18,9 +19,16 @@ type LightNode struct {
 }
 
 func (n *LightNode) Run() {
+	v, err := frida.NewVerifier(n.Params, n.Commitment)
+	if err != nil {
+		n.ResultChan <- NodeResult{NodeID: n.ID, Err: err}
+		return
+	}
+
 	positions := n.samplePositions()
 	acceptedCount := 0
 	rejectedCount := 0
+	var verifyTime time.Duration
 
 	for _, pos := range positions {
 		responseCh := make(chan SampleResponse, 1)
@@ -37,12 +45,14 @@ func (n *LightNode) Run() {
 			continue
 		}
 
-		// TODO: Integrate Verifier logic
+		t0 := time.Now()
+		err := v.VerifySample(pos, &response.Proof, response.Evaluations)
+		verifyTime += time.Since(t0)
 
-		if len(response.Proof.Layers) > 0 { // JUST A PLACEHOLDER NOWWWWW !!!
-			acceptedCount++
-		} else {
+		if err != nil {
 			rejectedCount++
+		} else {
+			acceptedCount++
 		}
 	}
 
@@ -51,12 +61,13 @@ func (n *LightNode) Run() {
 		SampledPositions: positions,
 		AcceptedCount:    acceptedCount,
 		RejectedCount:    rejectedCount,
+		TotalVerifyNs:    verifyTime,
 	}
 }
 
 func (n *LightNode) samplePositions() []int {
 	positions := make([]int, 0, n.NumSamples)
-	taken := make(map[int]bool) // avoid duplications
+	taken := make(map[int]bool)
 	var buf [frida.BytesPerElement]byte
 	for len(positions) < n.NumSamples {
 		_, _ = rand.Read(buf[:])

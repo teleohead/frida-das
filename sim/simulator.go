@@ -106,11 +106,13 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 	totalAccepted := 0
 	totalRejected := 0
 	coverageSet := make(map[int]bool, numRequests)
+	var totalVerifyNs time.Duration
 
 	for _, nr := range nodeResults {
 		totalSampled += len(nr.SampledPositions)
 		totalAccepted += nr.AcceptedCount
 		totalRejected += nr.RejectedCount
+		totalVerifyNs += nr.TotalVerifyNs
 		for _, pos := range nr.SampledPositions {
 			coverageSet[pos] = true
 		}
@@ -123,8 +125,11 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 		throughput = float64(totalSampled) / samplingDuration.Seconds()
 	}
 
-	// TODO: VERIFIER LOGIC
+	verifiedCount := totalAccepted + totalRejected
 	var avgVerifyDuration time.Duration
+	if verifiedCount > 0 {
+		avgVerifyDuration = totalVerifyNs / time.Duration(verifiedCount)
+	}
 
 	return &SimResult{
 		Config:           cfg,
