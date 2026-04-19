@@ -59,7 +59,7 @@ func TestVerifyCommitmentProofs_HonestCommitment(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewVerifier: %v", err)
 	}
-	if err := v.VerifyCommitmentProofs(); err != nil {
+	if err := v.Verify(); err != nil {
 		t.Errorf("honest commitment should verify: %v", err)
 	}
 }
@@ -77,7 +77,7 @@ func TestVerifyCommitmentProofs_TamperedPosition(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewVerifier: %v", err)
 	}
-	if err := v.VerifyCommitmentProofs(); err == nil {
+	if err := v.Verify(); err == nil {
 		t.Error("tampered position should not verify")
 	}
 }
@@ -228,7 +228,7 @@ func TestVerifier_BatchSize1(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewVerifier: %v", err)
 	}
-	if err := v.VerifyCommitmentProofs(); err != nil {
+	if err := v.Verify(); err != nil {
 		t.Errorf("commitment proofs should verify: %v", err)
 	}
 
@@ -240,5 +240,23 @@ func TestVerifier_BatchSize1(t *testing.T) {
 	evals := []Scalar{prover.BatchOracle[pos]}
 	if err := v.VerifySample(pos, proof, evals); err != nil {
 		t.Errorf("B=1 sample should verify: %v", err)
+	}
+}
+
+func TestVerify_DegreeBoundFailure(t *testing.T) {
+	comm, _ := mustBuild(t)
+	if len(comm.FinalLayer) <= testParams.MaxRemainderDegree+1 {
+		t.Skip("final layer too small to fail degree bound")
+	}
+	var one Scalar
+	one.SetUint64(1)
+	// corrupt a single evaluation in the final layer
+	comm.FinalLayer[0].Add(&comm.FinalLayer[0], &one)
+	v, err := NewVerifier(testParams, comm)
+	if err != nil {
+		t.Fatalf("NewVerifier: %v", err)
+	}
+	if err := v.Verify(); err == nil {
+		t.Fatal("verifier accepted a final layer that violated the degree bound")
 	}
 }

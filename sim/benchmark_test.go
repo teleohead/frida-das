@@ -148,8 +148,8 @@ func BenchmarkVerifyCommitmentProofs(b *testing.B) {
 			}
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				if err := v.VerifyCommitmentProofs(); err != nil {
-					b.Fatalf("VerifyCommitmentProofs: %v", err)
+				if err := v.Verify(); err != nil {
+					b.Fatalf("Verify: %v", err)
 				}
 			}
 		})

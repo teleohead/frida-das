@@ -5,10 +5,10 @@ package frida
 // algebraicHash implements FRI Algebraic Hash Function H_{rho_i}[G_{i-1}]
 // This function is defined in Section 4.1 of the FRIDA Paper.
 func algebraicHash(
-	prev []Scalar,   // G_{i-1}
-	next []Scalar,   // G_i
+	prev []Scalar, // G_{i-1}
+	next []Scalar, // G_i
 	domain []Scalar, // L_{i-1}
-	rho *Scalar,     // rho_i
+	rho *Scalar, // rho_i
 	foldingFactor int,
 	preimageBuf []int,
 	xs []Scalar,
@@ -43,12 +43,12 @@ func writePreimageIndices(c, domainSize, foldingFactor int, buf []int) {
 }
 
 // computeNumRounds calculates the number of FRI folding rounds.
-// degree is the number of coefficients of a polynomial. e.g. x^2 + x + 1 has degree of 3.
-func computeNumRounds(degree, foldingFactor, maxRemainderDegree int) int {
+// numCoeffs is the number of coefficients of a polynomial. e.g. x^2 + x + 1 has degree of 3.
+func computeNumRounds(numCoeffs, foldingFactor, maxRemainderDegree int) int {
 	r := 0
-	d := degree
-	for d > maxRemainderDegree+1 {
-		d /= foldingFactor
+	n := numCoeffs
+	for n > maxRemainderDegree+1 {
+		n /= foldingFactor
 		r++
 	}
 	return r
