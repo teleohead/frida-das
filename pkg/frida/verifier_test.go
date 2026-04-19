@@ -220,7 +220,7 @@ func TestVerifier_BatchSize1(t *testing.T) {
 		data[i] = byte(i + 1)
 	}
 
-	comm, prover, err := params.CommitAndProve(data)
+	comm, prover, err := params.CommitAndProveWith(data, BaselineEvaluator{})
 	if err != nil {
 		t.Fatalf("CommitAndProve: %v", err)
 	}

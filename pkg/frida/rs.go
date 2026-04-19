@@ -3,7 +3,7 @@ package frida
 // BatchCombine computes G_0 = SUM_{j=0}^{B-1} xi^j * G_j for batched FRI.
 func batchCombine(
 	interleavedBatch []Scalar, // is in interleaved layout (B * domainSize elements)
-	xi *Scalar,                // batching challenge xi
+	xi *Scalar, // batching challenge xi
 	batchSize int,
 	domainSize int,
 	out []Scalar, // is the combined codeword G_0, len = domainSize
@@ -26,7 +26,7 @@ func batchCombine(
 func rsBatchEncode(
 	polys [][]Scalar,
 	domain []Scalar, // L_0
-	out []Scalar,    // must be pre-allocated with len = len(polys) * len(domain), interleaved!
+	out []Scalar, // must be pre-allocated with len = len(polys) * len(domain), interleaved!
 	eval PolyEvaluator,
 ) {
 	batchSize := len(polys)   // B
