@@ -270,7 +270,7 @@ func cmdSimulate(args []string) {
 	}
 
 	cfg := sim.SimConfig{
-		Prover: baseline.NewProver(params),
+		Prover: baseline.NewProver(params, baseline.Evaluator{}),
 		VerifierFactory: func(c *frida.Commitment) (frida.VerifierBackend, error) {
 			return baseline.NewVerifier(params, c)
 		},

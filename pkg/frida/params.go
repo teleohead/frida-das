@@ -4,8 +4,23 @@ import (
 	"fmt"
 )
 
-// CommitAndProve executes the full non-interactive Batched FRI protocol.
+// defaultEvaluator is the built-in Horner-based evaluator used by FriParams.CommitAndProve.
+type defaultEvaluator struct{}
+
+func (defaultEvaluator) Evaluate(coeffs []Scalar, domain []Scalar) []Scalar {
+	out := make([]Scalar, len(domain))
+	RSEncode(coeffs, domain, out)
+	return out
+}
+
+// CommitAndProve executes the full FRI protocol using the default (Horner) evaluator.
 func (p *FriParams) CommitAndProve(data []byte) (*Commitment, *ProverState, error) {
+	return CommitAndProveWith(*p, data, defaultEvaluator{})
+}
+
+// CommitAndProveWith executes the full FRI protocol using the provided PolyEvaluator.
+func CommitAndProveWith(params FriParams, data []byte, eval PolyEvaluator) (*Commitment, *ProverState, error) {
+	p := &params
 	ff := p.FoldingFactor
 
 	scalars, err := bytesToScalars(data)
@@ -27,7 +42,7 @@ func (p *FriParams) CommitAndProve(data []byte) (*Commitment, *ProverState, erro
 
 	domain := generateDomain(domainSize)
 	batchOracle := make([]Scalar, p.BatchSize*domainSize)
-	rsEncodeBatch(polys, domain, batchOracle)
+	rsEncodeBatch(polys, domain, batchOracle, eval)
 
 	batchLeaves := make([][]byte, domainSize)
 	for s := 0; s < domainSize; s++ {

@@ -71,7 +71,7 @@ func (v *Verifier) Verify() error {
 	return nil
 }
 
-// checks a single DAS sample
+// VerifySample checks a single DAS sample.
 func (v *Verifier) VerifySample(pos int, proof *FriProof, evals []Scalar) error {
 	if err := v.verifyMerklePaths(pos, proof); err != nil {
 		return err
@@ -82,7 +82,6 @@ func (v *Verifier) VerifySample(pos int, proof *FriProof, evals []Scalar) error 
 	return v.verifyFoldingConsistency(pos, proof)
 }
 
-// checks Merkle paths
 func (v *Verifier) verifyMerklePaths(pos int, proof *FriProof) error {
 	if len(proof.Layers) != len(v.Commitment.Roots) {
 		return fmt.Errorf("proof has %d layers but commitment has %d roots",
@@ -121,7 +120,6 @@ func (v *Verifier) verifyMerklePaths(pos int, proof *FriProof) error {
 	return nil
 }
 
-// checks batch combine
 func (v *Verifier) verifyBatchCombine(pos int, proof *FriProof, evals []Scalar) error {
 	if len(evals) != v.Params.BatchSize {
 		return fmt.Errorf("got %d evals, want %d", len(evals), v.Params.BatchSize)
@@ -177,7 +175,6 @@ func (v *Verifier) verifyBatchCombine(pos int, proof *FriProof, evals []Scalar) 
 	return nil
 }
 
-// verifyFoldingConsistency verifies folding consistency. this corresponds to the CheckAuth phase from the paper.
 func (v *Verifier) verifyFoldingConsistency(pos int, proof *FriProof) error {
 	numRounds := len(v.Challenges)
 	F := v.Params.FoldingFactor
@@ -266,15 +263,9 @@ func (v *Verifier) verifyFoldingConsistency(pos int, proof *FriProof) error {
 		currentPos = targetIdx
 	}
 
-	// check final layer
-	if err := v.verifyFinalLayer(currentPos, proof); err != nil {
-		return err
-	}
-
-	return nil
+	return v.verifyFinalLayer(currentPos, proof)
 }
 
-// verifyFinalLayer checks that the last folded value matches the commitment's FinalLayer.
 func (v *Verifier) verifyFinalLayer(finalPos int, proof *FriProof) error {
 	if len(v.Commitment.FinalLayer) == 0 {
 		return fmt.Errorf("commitment has empty final layer")
@@ -317,7 +308,7 @@ func (v *Verifier) verifyDegreeBound() error {
 		return nil
 	}
 
-	// calculate ω^-1 using Fermat's Little Theorem
+	// calculate omega ^ -1 using Fermat's Little Theorem
 	// a^(p-2) mod p == a^-1 mod p
 	omega := primitiveRoot(n)
 	pm2 := uint64(GoldilocksPrime - 2)

@@ -27,14 +27,14 @@ func rsEncodeBatch(
 	polys [][]Scalar,
 	domain []Scalar, // L_0
 	out []Scalar,    // must be pre-allocated with len = len(polys) * len(domain), interleaved!
+	eval PolyEvaluator,
 ) {
 	batchSize := len(polys)   // B
 	domainSize := len(domain) // |L_0|
-	buf := make([]Scalar, domainSize)
 	for j := 0; j < batchSize; j++ {
-		RSEncode(polys[j], domain, buf)
+		evals := eval.Evaluate(polys[j], domain)
 		for idx := 0; idx < domainSize; idx++ {
-			out[idx*batchSize+j] = buf[idx]
+			out[idx*batchSize+j] = evals[idx]
 		}
 	}
 }
