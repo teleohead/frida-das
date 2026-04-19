@@ -242,3 +242,21 @@ func TestVerifier_BatchSize1(t *testing.T) {
 		t.Errorf("B=1 sample should verify: %v", err)
 	}
 }
+
+func TestVerify_DegreeBoundFailure(t *testing.T) {
+	comm, _ := mustBuild(t)
+	if len(comm.FinalLayer) <= testParams.MaxRemainderDegree+1 {
+		t.Skip("final layer too small to fail degree bound")
+	}
+	var one Scalar
+	one.SetUint64(1)
+	// corrupt a single evaluation in the final layer
+	comm.FinalLayer[0].Add(&comm.FinalLayer[0], &one)
+	v, err := NewVerifier(testParams, comm)
+	if err != nil {
+		t.Fatalf("NewVerifier: %v", err)
+	}
+	if err := v.Verify(); err == nil {
+		t.Fatal("verifier accepted a final layer that violated the degree bound")
+	}
+}
