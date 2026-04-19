@@ -38,6 +38,10 @@ func NewVerifier(params FriParams, commitment *Commitment) (*Verifier, error) {
 
 // Verify checks embedded query proofs
 func (v *Verifier) Verify() error {
+	if err := v.verifyDegreeBound(); err != nil {
+		return fmt.Errorf("proof with invalid degree bound: %w", err)
+	}
+
 	numRounds := len(v.Commitment.Roots) - 2
 
 	hst := chainHash(v.Commitment.Roots[0], Hash{}, 0)
@@ -287,6 +291,35 @@ func (v *Verifier) verifyFinalLayer(finalPos int, proof *FriProof) error {
 	if actual != v.Commitment.FinalLayer[idx] {
 		return fmt.Errorf("final layer mismatch at pos %d: proof=%v, commitment=%v",
 			idx, actual.Uint64(), v.Commitment.FinalLayer[idx].Uint64())
+	}
+
+	return nil
+}
+
+func (v *Verifier) verifyDegreeBound() error {
+	finalEvals := v.Commitment.FinalLayer
+	n := len(finalEvals)
+	// trivially valid if length of final evaluations is already under max_remainder_deg + 1
+	if n <= v.Params.MaxRemainderDegree+1 {
+		return nil
+	}
+
+	// calculate ω^-1 using Fermat's Little Theorem
+	// a^(p-2) mod p == a^-1 mod p
+	omega := primitiveRoot(n)
+	pm2 := uint64(GoldilocksPrime - 2)
+	var omegaInv Scalar
+	omegaInv.Exp(omega, new(big.Int).SetUint64(pm2))
+
+	// perform inverse FFT
+	coeffs := iFFT(finalEvals, omegaInv)
+
+	// all degrees above max_remainder_degree must be zero
+	var zero Scalar
+	for i := v.Params.MaxRemainderDegree + 1; i < n; i++ {
+		if coeffs[i] != zero {
+			return fmt.Errorf("degree bound failed: coefficient %d is not zero", i)
+		}
 	}
 
 	return nil
