@@ -39,15 +39,6 @@ func main() {
 	}
 }
 
-func parseEvaluator(name string) (frida.PolyEvaluator, error) {
-	switch name {
-	case "baseline":
-		return frida.BaselineEvaluator{}, nil
-	default:
-		return nil, fmt.Errorf("unknown evaluator %q (available: baseline)", name)
-	}
-}
-
 func cmdGenerateData(args []string) {
 	fs := flag.NewFlagSet("generate-data", flag.ExitOnError)
 	size := fs.Int("size", 65536, "data size in bytes")
@@ -351,6 +342,15 @@ func parsePositions(s string) ([]int, error) {
 		positions = append(positions, n)
 	}
 	return positions, nil
+}
+
+func parseEvaluator(name string) (frida.PolyEvaluator, error) {
+	switch name {
+	case "baseline":
+		return frida.BaselineEvaluator{}, nil
+	default:
+		return nil, fmt.Errorf("unknown evaluator %q (available: baseline)", name)
+	}
 }
 
 func printUsage() {
