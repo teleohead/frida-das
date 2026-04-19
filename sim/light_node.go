@@ -12,19 +12,12 @@ type LightNode struct {
 	ID          int
 	NumSamples  int
 	DomainSize  int
-	Commitment  *frida.Commitment
-	Params      frida.FriParams
+	Verifier    *frida.Verifier
 	RequestChan chan<- SampleRequest
 	ResultChan  chan<- NodeResult
 }
 
 func (n *LightNode) Run() {
-	v, err := frida.NewVerifier(n.Params, n.Commitment)
-	if err != nil {
-		n.ResultChan <- NodeResult{NodeID: n.ID, Err: err}
-		return
-	}
-
 	positions := n.samplePositions()
 	acceptedPositions := make([]int, 0, len(positions))
 	acceptedCount := 0
@@ -47,7 +40,7 @@ func (n *LightNode) Run() {
 		}
 
 		t0 := time.Now()
-		err := v.VerifySample(pos, &response.Proof, response.Evaluations)
+		err := n.Verifier.VerifySample(pos, &response.Proof, response.Evaluations)
 		verifyTime += time.Since(t0)
 
 		if err != nil {

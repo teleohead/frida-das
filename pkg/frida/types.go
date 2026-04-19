@@ -4,24 +4,22 @@ import (
 	"github.com/consensys/gnark-crypto/field/goldilocks"
 )
 
+const (
+	// BytesPerElement is the size of a Goldilocks field element.
+	BytesPerElement = 8
+
+	// HashBytes is the SHA-256 output size.
+	HashBytes = 32
+
+	// GoldilocksPrime is the 2^64 - 2^32 + 1
+	GoldilocksPrime = 0xFFFFFFFF00000001
+)
+
 // Scalar is a finite-field element in the Goldilocks field.
 type Scalar = goldilocks.Element
 
 // Hash is a 32-byte digest (SHA-256).
 type Hash = [32]byte
-
-type FriParams struct {
-	// Blowup factor for the FRI protocol.
-	BlowupFactor int
-	// Folding factor for the FRI protocol.
-	FoldingFactor int
-	// Maximum degree of the remainder polynomial.
-	MaxRemainderDegree int
-	// Number of query-phrase repetitions (L).
-	NumQueries int
-	// Batch size (B).
-	BatchSize int
-}
 
 type Commitment struct {
 	// Roots[i] is Merkle root of oracle layer i.
@@ -61,30 +59,4 @@ type MerkleTree struct {
 	Root   Hash
 	Leaves [][]byte
 	Nodes  []Hash
-}
-
-type Prover struct {
-	Params     FriParams
-	DomainSize int
-
-	// B interleaved codewords (nil if B = 1)
-	BatchOracle []Scalar
-	// G_0
-	Codeword []Scalar
-	// G_1, G_2, ..., G_r
-	FoldedOracles [][]Scalar
-	// rho_1, rho_2, ... rho_r
-	Challenges []Scalar
-	// xi
-	BatchChallenge Scalar
-	// Merkle Trees
-	Trees []MerkleTree
-}
-
-type Verifier struct {
-	Params     FriParams
-	Commitment *Commitment
-	// challenges are recomputed from Commitment.Roots
-	Challenges []Scalar
-	DomainSize int
 }

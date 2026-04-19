@@ -16,17 +16,24 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 	// COMMIT
 	tCommitStart := time.Now()
 
-	builder := frida.NewBuilder(cfg.Params)
-	commitment, prover, err := builder.CommitAndProve(cfg.Data)
-
+	eval := cfg.Eval
+	if eval == nil {
+		eval = frida.BaselineEvaluator{}
+	}
+	commitment, prover, err := cfg.Params.CommitAndProveWith(cfg.Data, eval)
 	if err != nil {
 		return nil, fmt.Errorf("commit failed: %w", err)
+	}
+
+	verifier, err := frida.NewVerifier(cfg.Params, commitment)
+	if err != nil {
+		return nil, fmt.Errorf("verifier construction failed: %w", err)
 	}
 
 	commitDuration := time.Since(tCommitStart)
 
 	domainSize := prover.DomainSize
-	receptionNeeded := domainSize / cfg.Params.BlowupFactor
+	receptionNeeded := domainSize / prover.Params.BlowupFactor
 
 	// Apply corrupt fraction if no explicit positions provided
 	if len(cfg.CorruptPositions) == 0 && cfg.CorruptFraction > 0 {
@@ -83,8 +90,7 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 			ID:          i,
 			NumSamples:  cfg.SamplesPerNode,
 			DomainSize:  domainSize,
-			Commitment:  commitment,
-			Params:      cfg.Params,
+			Verifier:    verifier,
 			RequestChan: requestChan,
 			ResultChan:  resultChan,
 		}
