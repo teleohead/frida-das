@@ -325,7 +325,7 @@ func (v *Verifier) verifyDegreeBound() error {
 	omegaInv.Exp(omega, new(big.Int).SetUint64(pm2))
 
 	// perform inverse FFT
-	coeffs := iFFT(finalEvals, omegaInv)
+	coeffs := ifft(finalEvals, omegaInv)
 
 	// all degrees above max_remainder_degree must be zero
 	var zero Scalar

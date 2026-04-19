@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/teleohead/frida-das/pkg/frida"
+	"github.com/teleohead/frida-das/pkg/frida/baseline"
 	"github.com/teleohead/frida-das/sim"
 )
 
@@ -89,13 +90,11 @@ func cmdCommit(args []string) {
 		NumQueries:         *queries,
 	}
 
-	builder := frida.NewBuilder(params)
-
 	fmt.Printf("*** committing to %d bytes (blowup=%d, folding=%d, remainder=%d, batch=%d, queries=%d) ***\n",
 		len(data), *blowup, *folding, *remainder, *batch, *queries)
 
 	startTime := time.Now()
-	commitment, proverState, err := builder.CommitAndProve(data)
+	commitment, proverState, err := params.CommitAndProve(data)
 	duration := time.Since(startTime)
 
 	if err != nil {
@@ -145,8 +144,7 @@ func cmdOpen(args []string) {
 		NumQueries:         *queries,
 	}
 
-	builder := frida.NewBuilder(params)
-	_, proverState, err := builder.CommitAndProve(data)
+	_, proverState, err := params.CommitAndProve(data)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: failed to commit: %v\n", err)
 		os.Exit(1)
@@ -198,14 +196,13 @@ func cmdVerify(args []string) {
 		NumQueries:         *queries,
 	}
 
-	builder := frida.NewBuilder(params)
-	commitment, _, err := builder.CommitAndProve(data)
+	commitment, _, err := params.CommitAndProve(data)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: failed to commit: %v\n", err)
 		os.Exit(1)
 	}
 
-	v, err := frida.NewVerifier(params, commitment)
+	v, err := baseline.NewVerifier(params, commitment)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: failed to create verifier: %v\n", err)
 		os.Exit(1)
@@ -264,13 +261,18 @@ func cmdSimulate(args []string) {
 		}
 	}
 
+	params := frida.FriParams{
+		BlowupFactor:       *blowup,
+		FoldingFactor:      *folding,
+		MaxRemainderDegree: *remainder,
+		BatchSize:          *batch,
+		NumQueries:         *queries,
+	}
+
 	cfg := sim.SimConfig{
-		Params: frida.FriParams{
-			BlowupFactor:       *blowup,
-			FoldingFactor:      *folding,
-			MaxRemainderDegree: *remainder,
-			BatchSize:          *batch,
-			NumQueries:         *queries,
+		Prover: baseline.NewProver(params),
+		VerifierFactory: func(c *frida.Commitment) (frida.VerifierBackend, error) {
+			return baseline.NewVerifier(params, c)
 		},
 		Data:             data,
 		NumNodes:         *nodes,

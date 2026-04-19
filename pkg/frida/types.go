@@ -4,6 +4,17 @@ import (
 	"github.com/consensys/gnark-crypto/field/goldilocks"
 )
 
+const (
+	// BytesPerElement is the size of a Goldilocks field element.
+	BytesPerElement = 8
+
+	// HashBytes is the SHA-256 output size.
+	HashBytes = 32
+
+	// GoldilocksPrime is the 2^64 - 2^32 + 1
+	GoldilocksPrime = 0xFFFFFFFF00000001
+)
+
 // Scalar is a finite-field element in the Goldilocks field.
 type Scalar = goldilocks.Element
 
@@ -63,7 +74,7 @@ type MerkleTree struct {
 	Nodes  []Hash
 }
 
-type Prover struct {
+type ProverState struct {
 	Params     FriParams
 	DomainSize int
 

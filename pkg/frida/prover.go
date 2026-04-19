@@ -5,7 +5,7 @@ import (
 )
 
 // Open generates FriProofs for the given positions.
-func (prover *Prover) Open(positions []int) (*FriProof, error) {
+func (prover *ProverState) Open(positions []int) (*FriProof, error) {
 	if len(positions) == 0 {
 		return nil, fmt.Errorf("no positions given")
 	}
@@ -40,7 +40,7 @@ func (prover *Prover) Open(positions []int) (*FriProof, error) {
 // openSingle generates a proof for exactly one position.
 // For layer 0 (batch oracle) and layer 1 (G_0): opens the single leaf.
 // For layers 2+: opens all F coset preimages so the verifier can check folding consistency via Interpolate.
-func openSingle(prover *Prover, pos int) (*FriProof, error) {
+func openSingle(prover *ProverState, pos int) (*FriProof, error) {
 	numLayers := len(prover.Trees)
 	layers := make([]LayerProof, numLayers)
 	f := prover.Params.FoldingFactor

@@ -7,7 +7,7 @@ import (
 // DataProvider generates a SampleResponse for a given position.
 // It is utilized by the Network.
 type DataProvider interface {
-	ProvideResponse(p *frida.Prover, pos int) SampleResponse
+	ProvideResponse(p *frida.ProverState, pos int) SampleResponse
 }
 
 // HonestProvider produces real opening proofs and evaluations.
@@ -18,7 +18,7 @@ func NewHonestProvider() *HonestProvider {
 	return &HonestProvider{}
 }
 
-func (hp *HonestProvider) ProvideResponse(p *frida.Prover, pos int) SampleResponse {
+func (hp *HonestProvider) ProvideResponse(p *frida.ProverState, pos int) SampleResponse {
 	proof, err := p.Open([]int{pos})
 
 	if err != nil {
@@ -55,7 +55,7 @@ func NewMaliciousProvider(positions []int) *MaliciousProvider {
 }
 
 // ProvideResponse creates a corrupt response for a corrupted position
-func (mp *MaliciousProvider) ProvideResponse(p *frida.Prover, pos int) SampleResponse {
+func (mp *MaliciousProvider) ProvideResponse(p *frida.ProverState, pos int) SampleResponse {
 	if !mp.CorruptPositions[pos] {
 		return mp.hp.ProvideResponse(p, pos)
 	}
@@ -72,7 +72,7 @@ func (mp *MaliciousProvider) ProvideResponse(p *frida.Prover, pos int) SampleRes
 }
 
 // extractEvaluations reads the B interleaved elements at domain point s (pos) from the prover's batchOracle.
-func extractEvaluations(p *frida.Prover, pos int) []frida.Scalar {
+func extractEvaluations(p *frida.ProverState, pos int) []frida.Scalar {
 	B := p.Params.BatchSize
 	evals := make([]frida.Scalar, B)
 	if p.BatchOracle != nil {

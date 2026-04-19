@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/teleohead/frida-das/pkg/frida"
+	"github.com/teleohead/frida-das/pkg/frida/baseline"
 )
 
 func makeTestData(sizeBytes int) []byte {
@@ -87,7 +88,7 @@ func BenchmarkCommit(b *testing.B) {
 			b.SetBytes(int64(tc.dataSize))
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				_, _, err := frida.NewBuilder(tc.params).CommitAndProve(data)
+				_, _, err := (tc.params).CommitAndProve(data)
 				if err != nil {
 					b.Fatalf("CommitAndProve: %v", err)
 				}
@@ -101,7 +102,7 @@ func BenchmarkOpen(b *testing.B) {
 	for _, tc := range benchCases {
 		b.Run(tc.name, func(b *testing.B) {
 			data := makeTestData(tc.dataSize)
-			_, prover, err := frida.NewBuilder(tc.params).CommitAndProve(data)
+			_, prover, err := (tc.params).CommitAndProve(data)
 			if err != nil {
 				b.Fatalf("setup: %v", err)
 			}
@@ -120,7 +121,7 @@ func BenchmarkNewVerifier(b *testing.B) {
 	for _, tc := range benchCases {
 		b.Run(tc.name, func(b *testing.B) {
 			data := makeTestData(tc.dataSize)
-			comm, _, err := frida.NewBuilder(tc.params).CommitAndProve(data)
+			comm, _, err := (tc.params).CommitAndProve(data)
 			if err != nil {
 				b.Fatalf("setup: %v", err)
 			}
@@ -138,7 +139,7 @@ func BenchmarkVerifyCommitmentProofs(b *testing.B) {
 	for _, tc := range benchCases {
 		b.Run(tc.name, func(b *testing.B) {
 			data := makeTestData(tc.dataSize)
-			comm, _, err := frida.NewBuilder(tc.params).CommitAndProve(data)
+			comm, _, err := (tc.params).CommitAndProve(data)
 			if err != nil {
 				b.Fatalf("setup: %v", err)
 			}
@@ -160,7 +161,7 @@ func BenchmarkVerifySample(b *testing.B) {
 	for _, tc := range benchCases {
 		b.Run(tc.name, func(b *testing.B) {
 			data := makeTestData(tc.dataSize)
-			comm, prover, err := frida.NewBuilder(tc.params).CommitAndProve(data)
+			comm, prover, err := (tc.params).CommitAndProve(data)
 			if err != nil {
 				b.Fatalf("setup: %v", err)
 			}
@@ -185,7 +186,7 @@ func BenchmarkProofSize(b *testing.B) {
 	for _, tc := range benchCases {
 		b.Run(tc.name, func(b *testing.B) {
 			data := makeTestData(tc.dataSize)
-			_, prover, err := frida.NewBuilder(tc.params).CommitAndProve(data)
+			_, prover, err := (tc.params).CommitAndProve(data)
 			if err != nil {
 				b.Fatalf("setup: %v", err)
 			}
@@ -230,7 +231,10 @@ func BenchmarkSimulation(b *testing.B) {
 		name := fmt.Sprintf("%dN_%dS", sc.numNodes, sc.samplesPerNode)
 		b.Run(name, func(b *testing.B) {
 			cfg := SimConfig{
-				Params:         params,
+				Prover: baseline.NewProver(params),
+				VerifierFactory: func(c *frida.Commitment) (frida.VerifierBackend, error) {
+					return baseline.NewVerifier(params, c)
+				},
 				Data:           data,
 				NumNodes:       sc.numNodes,
 				SamplesPerNode: sc.samplesPerNode,
@@ -257,7 +261,7 @@ func BenchmarkFaultDetection(b *testing.B) {
 	}
 	data := makeTestData(4 * 1024)
 
-	comm, prover, err := frida.NewBuilder(params).CommitAndProve(data)
+	comm, prover, err := (params).CommitAndProve(data)
 	if err != nil {
 		b.Fatalf("setup: %v", err)
 	}
