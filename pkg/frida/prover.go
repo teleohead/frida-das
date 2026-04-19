@@ -38,19 +38,36 @@ func (prover *Prover) Open(positions []int) (*FriProof, error) {
 }
 
 // openSingle generates a proof for exactly one position.
+// For layer 0 (batch oracle) and layer 1 (G_0): opens the single leaf.
+// For layers 2+: opens all F coset preimages so the verifier can check folding consistency via Interpolate.
 func openSingle(prover *Prover, pos int) (*FriProof, error) {
 	numLayers := len(prover.Trees)
 	layers := make([]LayerProof, numLayers)
+	f := prover.Params.FoldingFactor
+	preimageBuf := make([]int, f)
 
 	currentPos := pos
 	currentDomainSize := prover.DomainSize
 
 	for layer := 0; layer < numLayers; layer++ {
-		leafIdx := currentPos % len(prover.Trees[layer].Leaves)
-		path := getMerkleProof(prover.Trees[layer], leafIdx)
-		layers[layer] = LayerProof{Paths: []MerklePath{path}}
+		if layer <= 1 {
+			leafIdx := currentPos % len(prover.Trees[layer].Leaves)
+			path := getMerkleProof(prover.Trees[layer], leafIdx)
+			layers[layer] = LayerProof{Paths: []MerklePath{path}}
+		} else {
+			cosetPos := currentPos % (currentDomainSize / f)
+			writePreimageIndices(cosetPos, currentDomainSize, f, preimageBuf)
+
+			paths := make([]MerklePath, f)
+			for k := 0; k < f; k++ {
+				leafIdx := preimageBuf[k] % len(prover.Trees[layer].Leaves)
+				paths[k] = getMerkleProof(prover.Trees[layer], leafIdx)
+			}
+			layers[layer] = LayerProof{Paths: paths}
+		}
+
 		if layer >= 1 { // G_0 or folded layers
-			currentDomainSize /= prover.Params.FoldingFactor
+			currentDomainSize /= f
 			if currentDomainSize > 0 {
 				currentPos = currentPos % currentDomainSize
 			}
@@ -58,5 +75,4 @@ func openSingle(prover *Prover, pos int) (*FriProof, error) {
 	}
 
 	return &FriProof{Layers: layers}, nil
-
 }

@@ -59,7 +59,7 @@ func TestVerifyCommitmentProofs_HonestCommitment(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewVerifier: %v", err)
 	}
-	if err := v.VerifyCommitmentProofs(); err != nil {
+	if err := v.Verify(); err != nil {
 		t.Errorf("honest commitment should verify: %v", err)
 	}
 }
@@ -77,7 +77,7 @@ func TestVerifyCommitmentProofs_TamperedPosition(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewVerifier: %v", err)
 	}
-	if err := v.VerifyCommitmentProofs(); err == nil {
+	if err := v.Verify(); err == nil {
 		t.Error("tampered position should not verify")
 	}
 }
@@ -228,7 +228,7 @@ func TestVerifier_BatchSize1(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewVerifier: %v", err)
 	}
-	if err := v.VerifyCommitmentProofs(); err != nil {
+	if err := v.Verify(); err != nil {
 		t.Errorf("commitment proofs should verify: %v", err)
 	}
 

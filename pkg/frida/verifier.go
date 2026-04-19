@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"math/big"
 )
 
-// builds verifier from commitment and params
+// NewVerifier builds verifier from commitment and params
 func NewVerifier(params FriParams, commitment *Commitment) (*Verifier, error) {
 	if len(commitment.Roots) < 2 {
 		return nil, fmt.Errorf("need at least 2 roots, got %d", len(commitment.Roots))
@@ -35,8 +36,8 @@ func NewVerifier(params FriParams, commitment *Commitment) (*Verifier, error) {
 	}, nil
 }
 
-// checks embedded query proofs
-func (v *Verifier) VerifyCommitmentProofs() error {
+// Verify checks embedded query proofs
+func (v *Verifier) Verify() error {
 	numRounds := len(v.Commitment.Roots) - 2
 
 	hst := chainHash(v.Commitment.Roots[0], Hash{}, 0)
@@ -57,7 +58,10 @@ func (v *Verifier) VerifyCommitmentProofs() error {
 			return fmt.Errorf("query %d: position %d doesn't match Fiat-Shamir (%d)", i, pos, expected[i])
 		}
 		if err := v.verifyMerklePaths(pos, &v.Commitment.QueryProofs[i]); err != nil {
-			return fmt.Errorf("query %d (pos %d): %w", i, pos, err)
+			return fmt.Errorf("query %d (pos %d) merkle path check failed: %w", i, pos, err)
+		}
+		if err := v.verifyFoldingConsistency(pos, &v.Commitment.QueryProofs[i]); err != nil {
+			return fmt.Errorf("query %d (pos %d) folding failed: %w", i, pos, err)
 		}
 	}
 	return nil
@@ -68,10 +72,13 @@ func (v *Verifier) VerifySample(pos int, proof *FriProof, evals []Scalar) error 
 	if err := v.verifyMerklePaths(pos, proof); err != nil {
 		return err
 	}
-	return v.verifyBatchCombine(proof, evals)
+	if err := v.verifyBatchCombine(proof, evals); err != nil {
+		return err
+	}
+	return v.verifyFoldingConsistency(pos, proof)
 }
 
-// checks merkle paths
+// checks Merkle paths
 func (v *Verifier) verifyMerklePaths(pos int, proof *FriProof) error {
 	if len(proof.Layers) != len(v.Commitment.Roots) {
 		return fmt.Errorf("proof has %d layers but commitment has %d roots",
@@ -150,5 +157,137 @@ func (v *Verifier) verifyBatchCombine(proof *FriProof, evals []Scalar) error {
 	if got != expected {
 		return fmt.Errorf("G_0 value doesn't match the batch combination of the supplied evals")
 	}
+	return nil
+}
+
+// verifyFoldingConsistency verifies folding consistency. this corresponds to the CheckAuth phase from the paper.
+func (v *Verifier) verifyFoldingConsistency(pos int, proof *FriProof) error {
+	numRounds := len(v.Challenges)
+	F := v.Params.FoldingFactor
+
+	// scratch buffers
+	xs := make([]Scalar, F)
+	fs := make([]Scalar, F)
+	weights := make([]Scalar, F)
+	diffs := make([]Scalar, F)
+	preimageBuf := make([]int, F)
+
+	currentPos := pos
+	currentDomainSize := v.DomainSize
+
+	for round := 0; round < numRounds; round++ {
+		prevLayerIdx := round + 1
+		nextLayerIdx := round + 2
+
+		if prevLayerIdx >= len(proof.Layers) || nextLayerIdx >= len(proof.Layers) {
+			return fmt.Errorf("round %d: proof missing layers (have %d, need %d)",
+				round, len(proof.Layers), nextLayerIdx+1)
+		}
+
+		// we compute only the F coset domain points (not the full domain)
+		omega := primitiveRoot(currentDomainSize)
+		stride := currentDomainSize / F
+
+		cosetPos := currentPos % stride
+		writePreimageIndices(cosetPos, currentDomainSize, F, preimageBuf)
+
+		// xs[0] = omega ^ preimageBuf[0], then multiply omega^stride for each next
+		xs[0].Exp(omega, new(big.Int).SetUint64(uint64(preimageBuf[0])))
+		var omegaStride Scalar
+		omegaStride.Exp(omega, new(big.Int).SetUint64(uint64(stride)))
+		for k := 1; k < F; k++ {
+			xs[k].Mul(&xs[k-1], &omegaStride)
+		}
+
+		// extract evaluations from the previous layer's coset paths
+		prevLayer := proof.Layers[prevLayerIdx]
+		if len(prevLayer.Paths) < F {
+			return fmt.Errorf("round %d: need %d coset paths at layer %d, got %d",
+				round, F, prevLayerIdx, len(prevLayer.Paths))
+		}
+
+		for k := 0; k < F; k++ {
+			leaf := prevLayer.Paths[k].LeafValue
+			if len(leaf) < BytesPerElement {
+				return fmt.Errorf("round %d coset %d: leaf too short (%d bytes)",
+					round, k, len(leaf))
+			}
+			fs[k].SetUint64(binary.LittleEndian.Uint64(leaf[:BytesPerElement]))
+		}
+
+		// interpolate and compare against the next layer
+		expected := interpolate(&v.Challenges[round], xs[:F], fs[:F], weights, diffs)
+		nextLayer := proof.Layers[nextLayerIdx]
+		nextDomainSize := currentDomainSize / F
+		targetIdx := currentPos % nextDomainSize
+
+		var actual Scalar
+		found := false
+		for _, p := range nextLayer.Paths {
+			if p.Index == targetIdx {
+				if len(p.LeafValue) < BytesPerElement {
+					return fmt.Errorf("round %d: next layer leaf too short (%d bytes)",
+						round, len(p.LeafValue))
+				}
+				actual.SetUint64(binary.LittleEndian.Uint64(p.LeafValue[:BytesPerElement]))
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return fmt.Errorf("round %d: no path in layer %d for folded position %d",
+				round, nextLayerIdx, targetIdx)
+		}
+
+		if expected != actual {
+			return fmt.Errorf("round %d: folding consistency failed at pos %d (expected %d, got %d)",
+				round, currentPos, expected.Uint64(), actual.Uint64())
+		}
+
+		currentDomainSize = nextDomainSize
+		currentPos = targetIdx
+	}
+
+	// check final layer
+	if err := v.verifyFinalLayer(currentPos, proof); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// verifyFinalLayer checks that the last folded value matches the commitment's FinalLayer.
+func (v *Verifier) verifyFinalLayer(finalPos int, proof *FriProof) error {
+	if len(v.Commitment.FinalLayer) == 0 {
+		return fmt.Errorf("commitment has empty final layer")
+	}
+
+	idx := finalPos % len(v.Commitment.FinalLayer)
+	lastLayer := proof.Layers[len(proof.Layers)-1]
+
+	var actual Scalar
+	found := false
+
+	for _, p := range lastLayer.Paths {
+		if p.Index == idx {
+			if len(p.LeafValue) < BytesPerElement {
+				return fmt.Errorf("final layer leaf too short")
+			}
+			actual.SetUint64(binary.LittleEndian.Uint64(p.LeafValue[:BytesPerElement]))
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("no path in final proof layer for index %d", idx)
+	}
+
+	if actual != v.Commitment.FinalLayer[idx] {
+		return fmt.Errorf("final layer mismatch at pos %d: proof=%v, commitment=%v",
+			idx, actual.Uint64(), v.Commitment.FinalLayer[idx].Uint64())
+	}
+
 	return nil
 }

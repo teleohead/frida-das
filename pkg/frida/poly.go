@@ -31,6 +31,20 @@ func generateDomain(domainSize int) []Scalar {
 	return domain
 }
 
+// primitiveRoot returns ω, the primitive n-th root of unity in the Goldilocks field for a given domain size
+// It is used by Verifier to check folding consistency.
+func primitiveRoot(domainSize int) Scalar {
+	var g Scalar
+	g.SetUint64(7)
+
+	pm1 := uint64(GoldilocksPrime - 1)
+	exp := pm1 / uint64(domainSize)
+
+	var omega Scalar
+	omega.Exp(g, new(big.Int).SetUint64(exp))
+	return omega
+}
+
 // Interpolate implements the Lagrange interpolation procedure.
 // We use Barycentric Lagrange Interpolation. This is fast when F is small.
 // weights and diffs are pre-allocated buffers to increase performance.
