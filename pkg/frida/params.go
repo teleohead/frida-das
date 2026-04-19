@@ -18,7 +18,7 @@ func (p *FriParams) domainSize(dataLen int) int {
 func (p *FriParams) numRounds(domainSize int) int {
 	deg := domainSize / p.BlowupFactor
 	rnd := 0
-	for rnd > p.MaxRemainderDegree+1 {
+	for deg > p.MaxRemainderDegree+1 {
 		deg /= p.FoldingFactor
 		rnd++
 	}
