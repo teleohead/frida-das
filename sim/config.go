@@ -10,12 +10,12 @@ import (
 )
 
 type SimConfig struct {
-	Prover          frida.ProverBackend                                     `json:"-"`
-	VerifierFactory func(*frida.Commitment) (frida.VerifierBackend, error) `json:"-"`
-	Data            []byte
-	NumNodes        int
-	SamplesPerNode  int
-	NetworkWorkers  int     // number of concurrent goroutines, defaults to GOMAXPROCS
+	Params           frida.FriParams
+	Eval             frida.PolyEvaluator
+	Data             []byte
+	NumNodes         int
+	SamplesPerNode   int
+	NetworkWorkers   int     // number of concurrent goroutines, defaults to GOMAXPROCS
 	CorruptPositions []int   // explicit positions to corrupt
 	CorruptFraction  float64 // fraction of domain to corrupt (0.0–1.0); applied after commit if CorruptPositions is empty
 }

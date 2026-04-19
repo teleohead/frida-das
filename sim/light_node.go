@@ -12,7 +12,7 @@ type LightNode struct {
 	ID          int
 	NumSamples  int
 	DomainSize  int
-	Verifier    frida.VerifierBackend
+	Verifier    *frida.Verifier
 	RequestChan chan<- SampleRequest
 	ResultChan  chan<- NodeResult
 }

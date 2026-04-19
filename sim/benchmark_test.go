@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/teleohead/frida-das/pkg/frida"
-	"github.com/teleohead/frida-das/pkg/frida/baseline"
 )
 
 func makeTestData(sizeBytes int) []byte {
@@ -231,10 +230,8 @@ func BenchmarkSimulation(b *testing.B) {
 		name := fmt.Sprintf("%dN_%dS", sc.numNodes, sc.samplesPerNode)
 		b.Run(name, func(b *testing.B) {
 			cfg := SimConfig{
-				Prover: baseline.NewProver(params, baseline.Evaluator{}),
-				VerifierFactory: func(c *frida.Commitment) (frida.VerifierBackend, error) {
-					return baseline.NewVerifier(params, c)
-				},
+				Params:         params,
+				Eval:           frida.BaselineEvaluator{},
 				Data:           data,
 				NumNodes:       sc.numNodes,
 				SamplesPerNode: sc.samplesPerNode,

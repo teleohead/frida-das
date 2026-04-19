@@ -4,18 +4,22 @@ import (
 	"fmt"
 )
 
-// defaultEvaluator is the built-in Horner-based evaluator used by FriParams.CommitAndProve.
-type defaultEvaluator struct{}
-
-func (defaultEvaluator) Evaluate(coeffs []Scalar, domain []Scalar) []Scalar {
-	out := make([]Scalar, len(domain))
-	RSEncode(coeffs, domain, out)
-	return out
+type FriParams struct {
+	// Blowup factor for the FRI protocol.
+	BlowupFactor int
+	// Folding factor for the FRI protocol.
+	FoldingFactor int
+	// Maximum degree of the remainder polynomial.
+	MaxRemainderDegree int
+	// Number of query-phrase repetitions (L).
+	NumQueries int
+	// Batch size (B).
+	BatchSize int
 }
 
 // CommitAndProve executes the full FRI protocol using the default (Horner) evaluator.
 func (p *FriParams) CommitAndProve(data []byte) (*Commitment, *ProverState, error) {
-	return CommitAndProveWith(*p, data, defaultEvaluator{})
+	return CommitAndProveWith(*p, data, BaselineEvaluator{})
 }
 
 // CommitAndProveWith executes the full FRI protocol using the provided PolyEvaluator.

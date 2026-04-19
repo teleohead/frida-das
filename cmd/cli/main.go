@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/teleohead/frida-das/pkg/frida"
-	"github.com/teleohead/frida-das/pkg/frida/baseline"
 	"github.com/teleohead/frida-das/sim"
 )
 
@@ -202,7 +201,7 @@ func cmdVerify(args []string) {
 		os.Exit(1)
 	}
 
-	v, err := baseline.NewVerifier(params, commitment)
+	v, err := frida.NewVerifier(params, commitment)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: failed to create verifier: %v\n", err)
 		os.Exit(1)
@@ -270,10 +269,8 @@ func cmdSimulate(args []string) {
 	}
 
 	cfg := sim.SimConfig{
-		Prover: baseline.NewProver(params, baseline.Evaluator{}),
-		VerifierFactory: func(c *frida.Commitment) (frida.VerifierBackend, error) {
-			return baseline.NewVerifier(params, c)
-		},
+		Params:           params,
+		Eval:             frida.BaselineEvaluator{},
 		Data:             data,
 		NumNodes:         *nodes,
 		SamplesPerNode:   *samples,

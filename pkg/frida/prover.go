@@ -4,6 +4,24 @@ import (
 	"fmt"
 )
 
+type ProverState struct {
+	Params     FriParams
+	DomainSize int
+
+	// B interleaved codewords (nil if B = 1)
+	BatchOracle []Scalar
+	// G_0
+	Codeword []Scalar
+	// G_1, G_2, ..., G_r
+	FoldedOracles [][]Scalar
+	// rho_1, rho_2, ... rho_r
+	Challenges []Scalar
+	// xi
+	BatchChallenge Scalar
+	// Merkle Trees
+	Trees []MerkleTree
+}
+
 // Open generates FriProofs for the given positions.
 func (prover *ProverState) Open(positions []int) (*FriProof, error) {
 	if len(positions) == 0 {

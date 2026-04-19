@@ -41,7 +41,7 @@ func rsEncodeBatch(
 
 // RSEncode implements Reed-Solomon Encoding.
 // We use Horner's Method f(x) = c_0 + x(c_1 + x(c_2 + ...)) to reduce the number of operations.
-func RSEncode(
+func rsEncode(
 	poly []Scalar, // a polynomial represented by an array of its coefficients
 	domain []Scalar,
 	out []Scalar, // must be pre-allocated with len = len(domain)

@@ -16,12 +16,12 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 	// COMMIT
 	tCommitStart := time.Now()
 
-	commitment, prover, err := cfg.Prover.CommitAndProve(cfg.Data)
+	commitment, prover, err := cfg.Params.CommitAndProve(cfg.Data)
 	if err != nil {
 		return nil, fmt.Errorf("commit failed: %w", err)
 	}
 
-	verifier, err := cfg.VerifierFactory(commitment)
+	verifier, err := frida.NewVerifier(cfg.Params, commitment)
 	if err != nil {
 		return nil, fmt.Errorf("verifier construction failed: %w", err)
 	}

@@ -7,6 +7,14 @@ import (
 	"math/big"
 )
 
+type Verifier struct {
+	Params     FriParams
+	Commitment *Commitment
+	// challenges are recomputed from Commitment.Roots
+	Challenges []Scalar
+	DomainSize int
+}
+
 // NewVerifier builds verifier from commitment and params
 func NewVerifier(params FriParams, commitment *Commitment) (*Verifier, error) {
 	if len(commitment.Roots) < 2 {
