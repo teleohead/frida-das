@@ -43,7 +43,10 @@ func cmdGenerateData(args []string) {
 	fs := flag.NewFlagSet("generate-data", flag.ExitOnError)
 	size := fs.Int("size", 65536, "data size in bytes")
 	out := fs.String("out", "data.bin", "output file path")
-	fs.Parse(args)
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
+		os.Exit(1)
+	}
 
 	data := make([]byte, *size)
 	if _, err := rand.Read(data); err != nil {
@@ -67,7 +70,10 @@ func cmdCommit(args []string) {
 	remainder := fs.Int("remainder", 31, "max remainder degree")
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
-	fs.Parse(args)
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
+		os.Exit(1)
+	}
 
 	data, err := os.ReadFile(*dataPath)
 	if err != nil {
@@ -114,7 +120,10 @@ func cmdOpen(args []string) {
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
 	posFlag := fs.String("pos", "0", "comma-separated positions to open (e.g. 0,1,5)")
-	fs.Parse(args)
+	if err := fs.Parse(args); err != nil {
+		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
+		os.Exit(1)
+	}
 
 	positions, err := parsePositions(*posFlag)
 	if err != nil {
@@ -169,7 +178,11 @@ func cmdVerify(args []string) {
 	remainder := fs.Int("remainder", 31, "max remainder degree")
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
-	fs.Parse(args)
+	err := fs.Parse(args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
+		os.Exit(1)
+	}
 
 	data, err := os.ReadFile(*dataPath)
 	if err != nil {
@@ -224,7 +237,11 @@ func cmdSimulate(args []string) {
 	outFile := fs.String("out", "", "write JSON result to file (optional)")
 	corruptFlag := fs.String("corrupt", "", "comma-separated positions to corrupt (e.g. 0,1,5)")
 	corruptFraction := fs.Float64("corrupt-fraction", 0, "fraction of domain to corrupt (e.g. 0.9)")
-	fs.Parse(args)
+	err := fs.Parse(args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
+		os.Exit(1)
+	}
 
 	if *dataPath == "" {
 		fmt.Fprintf(os.Stderr, "failure: --data is required\n")
