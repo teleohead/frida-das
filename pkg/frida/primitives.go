@@ -28,9 +28,9 @@ type Commitment struct {
 	// FinalLayer = G_r
 	FinalLayer []Scalar
 
-	// QueryProofs contains L (FriParams.NumQueries) self-checked proofs.
+	// QueryProofs contains L (Params.NumQueries) self-checked proofs.
 	// QueryProofs[i] authenticates the i-th Fiat-Shamir query.
-	QueryProofs []FriProof
+	QueryProofs []Proof
 
 	// QueryPositions[i] is the position sampled at i-th query.
 	QueryPositions []int
@@ -49,13 +49,13 @@ type LayerProof struct {
 	Paths []MerklePath
 }
 
-// FriProof combines Merkle paths across all oracle layers into a single query.
+// Proof combines Merkle paths across all oracle layers into a single query.
 // It is both used in Commitment.QueryProofs and as the return value of Open().
-type FriProof struct {
+type Proof struct {
 	Layers []LayerProof
 }
 
-func (proof *FriProof) SizeByte() int {
+func (proof *Proof) SizeByte() int {
 	size := 0
 	// 4 bytes (index) + 4 bytes (NumLeaves)
 	const pathOverhead = 8

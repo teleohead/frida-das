@@ -97,7 +97,7 @@ func cmdCommit(args []string) {
 		os.Exit(1)
 	}
 
-	params := frida.FriParams{
+	params := frida.Params{
 		BlowupFactor:       *blowup,
 		FoldingFactor:      *folding,
 		MaxRemainderDegree: *remainder,
@@ -158,7 +158,7 @@ func cmdOpen(args []string) {
 		os.Exit(1)
 	}
 
-	params := frida.FriParams{
+	params := frida.Params{
 		BlowupFactor:       *blowup,
 		FoldingFactor:      *folding,
 		MaxRemainderDegree: *remainder,
@@ -217,7 +217,7 @@ func cmdVerify(args []string) {
 		os.Exit(1)
 	}
 
-	params := frida.FriParams{
+	params := frida.Params{
 		BlowupFactor:       *blowup,
 		FoldingFactor:      *folding,
 		MaxRemainderDegree: *remainder,
@@ -297,7 +297,7 @@ func cmdSimulate(args []string) {
 		}
 	}
 
-	params := frida.FriParams{
+	params := frida.Params{
 		BlowupFactor:       *blowup,
 		FoldingFactor:      *folding,
 		MaxRemainderDegree: *remainder,

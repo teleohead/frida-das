@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-type FriParams struct {
+type Params struct {
 	// Blowup factor for the FRI protocol.
 	BlowupFactor int
 	// Folding factor for the FRI protocol.
@@ -18,7 +18,7 @@ type FriParams struct {
 }
 
 // CommitAndProveWith executes the full FRI protocol using the provided PolyEvaluator.
-func (params FriParams) CommitAndProveWith(data []byte, eval PolyEvaluator) (*Commitment, *ProverState, error) {
+func (params Params) CommitAndProveWith(data []byte, eval PolyEvaluator) (*Commitment, *ProverState, error) {
 	p := &params
 	ff := p.FoldingFactor
 
@@ -119,7 +119,7 @@ func (params FriParams) CommitAndProveWith(data []byte, eval PolyEvaluator) (*Co
 	}
 
 	queryPositions := deriveQueryPositions(prevRoot, hst, domainSize, p.NumQueries)
-	queryProofs := make([]FriProof, p.NumQueries)
+	queryProofs := make([]Proof, p.NumQueries)
 
 	for i, pos := range queryPositions {
 		proof, err := openSingle(prover, pos)

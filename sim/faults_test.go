@@ -9,7 +9,7 @@ import (
 
 // 2 polynomials
 var (
-	testParams = frida.FriParams{
+	testParams = frida.Params{
 		BlowupFactor:       2,
 		FoldingFactor:      2,
 		MaxRemainderDegree: 1,

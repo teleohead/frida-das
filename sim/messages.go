@@ -17,7 +17,7 @@ type SampleRequest struct {
 type SampleResponse struct {
 	Position    int
 	Evaluations []frida.Scalar // B field elements
-	Proof       frida.FriProof
+	Proof       frida.Proof
 	Err         error
 }
 
