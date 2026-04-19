@@ -26,6 +26,7 @@ func (n *LightNode) Run() {
 	}
 
 	positions := n.samplePositions()
+	acceptedPositions := make([]int, 0, len(positions))
 	acceptedCount := 0
 	rejectedCount := 0
 	var verifyTime time.Duration
@@ -53,15 +54,17 @@ func (n *LightNode) Run() {
 			rejectedCount++
 		} else {
 			acceptedCount++
+			acceptedPositions = append(acceptedPositions, pos)
 		}
 	}
 
 	n.ResultChan <- NodeResult{
-		NodeID:           n.ID,
-		SampledPositions: positions,
-		AcceptedCount:    acceptedCount,
-		RejectedCount:    rejectedCount,
-		TotalVerifyNs:    verifyTime,
+		NodeID:            n.ID,
+		SampledPositions:  positions,
+		AcceptedPositions: acceptedPositions,
+		AcceptedCount:     acceptedCount,
+		RejectedCount:     rejectedCount,
+		TotalVerifyNs:     verifyTime,
 	}
 }
 

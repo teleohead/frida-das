@@ -14,8 +14,9 @@ type SimConfig struct {
 	Data             []byte
 	NumNodes         int
 	SamplesPerNode   int
-	NetworkWorkers   int // number of concurrent goroutines, defaults to GOMAXPROCS
-	CorruptPositions []int
+	NetworkWorkers   int     // number of concurrent goroutines, defaults to GOMAXPROCS
+	CorruptPositions []int   // explicit positions to corrupt
+	CorruptFraction  float64 // fraction of domain to corrupt (0.0–1.0); applied after commit if CorruptPositions is empty
 }
 
 type SimResult struct {

@@ -28,6 +28,15 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 	domainSize := prover.DomainSize
 	receptionNeeded := domainSize / cfg.Params.BlowupFactor
 
+	// Apply corrupt fraction if no explicit positions provided
+	if len(cfg.CorruptPositions) == 0 && cfg.CorruptFraction > 0 {
+		n := int(cfg.CorruptFraction * float64(domainSize))
+		cfg.CorruptPositions = make([]int, n)
+		for i := range cfg.CorruptPositions {
+			cfg.CorruptPositions[i] = i
+		}
+	}
+
 	// SINGLE PROOF METRICS
 	proofSampleCount := 10
 	if proofSampleCount > domainSize {
@@ -113,7 +122,7 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 		totalAccepted += nr.AcceptedCount
 		totalRejected += nr.RejectedCount
 		totalVerifyNs += nr.TotalVerifyNs
-		for _, pos := range nr.SampledPositions {
+		for _, pos := range nr.AcceptedPositions {
 			coverageSet[pos] = true
 		}
 	}
