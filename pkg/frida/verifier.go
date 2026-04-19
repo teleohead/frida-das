@@ -76,7 +76,7 @@ func (v *Verifier) VerifySample(pos int, proof *FriProof, evals []Scalar) error 
 	if err := v.verifyMerklePaths(pos, proof); err != nil {
 		return err
 	}
-	if err := v.verifyBatchCombine(proof, evals); err != nil {
+	if err := v.verifyBatchCombine(pos, proof, evals); err != nil {
 		return err
 	}
 	return v.verifyFoldingConsistency(pos, proof)
@@ -98,7 +98,11 @@ func (v *Verifier) verifyMerklePaths(pos int, proof *FriProof) error {
 			if path.NumLeaves == 0 {
 				return fmt.Errorf("layer %d: path has zero leaves", layer)
 			}
-			if want := currentPos % path.NumLeaves; path.Index != want {
+			stride := path.NumLeaves / len(lp.Paths)
+			if stride == 0 {
+				stride = 1
+			}
+			if want := currentPos % stride; path.Index%stride != want {
 				return fmt.Errorf("layer %d: path index %d, expected %d", layer, path.Index, want)
 			}
 			if !VerifyMerkleProof(root, path) {
@@ -118,7 +122,7 @@ func (v *Verifier) verifyMerklePaths(pos int, proof *FriProof) error {
 }
 
 // checks batch combine
-func (v *Verifier) verifyBatchCombine(proof *FriProof, evals []Scalar) error {
+func (v *Verifier) verifyBatchCombine(pos int, proof *FriProof, evals []Scalar) error {
 	if len(evals) != v.Params.BatchSize {
 		return fmt.Errorf("got %d evals, want %d", len(evals), v.Params.BatchSize)
 	}
@@ -151,7 +155,17 @@ func (v *Verifier) verifyBatchCombine(proof *FriProof, evals []Scalar) error {
 		expected.Add(&tmp, &evals[j])
 	}
 
-	g0Leaf := proof.Layers[1].Paths[0].LeafValue
+	// Layer 1 (G_0) now holds F coset paths; find the one for pos.
+	var g0Leaf []byte
+	for _, p := range proof.Layers[1].Paths {
+		if p.Index == pos {
+			g0Leaf = p.LeafValue
+			break
+		}
+	}
+	if g0Leaf == nil {
+		return fmt.Errorf("no G_0 path found for position %d", pos)
+	}
 	if len(g0Leaf) < BytesPerElement {
 		return fmt.Errorf("G_0 leaf too short (%d bytes)", len(g0Leaf))
 	}

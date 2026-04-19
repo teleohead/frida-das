@@ -185,7 +185,7 @@ func iFFT(evals []Scalar, omegaInv Scalar) []Scalar {
 
 	// 1. Bit-reversal permutation (in-place copy)
 	coeffs := make([]Scalar, n)
-	shift := 64 - bitLen(uint32(n-1))
+	shift := 32 - bitLen(uint32(n-1))
 	for i := 0; i < n; i++ {
 		rev := reverseBits(uint32(i)) >> shift
 		coeffs[rev] = evals[i]

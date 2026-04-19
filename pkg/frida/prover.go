@@ -50,11 +50,14 @@ func openSingle(prover *Prover, pos int) (*FriProof, error) {
 	currentDomainSize := prover.DomainSize
 
 	for layer := 0; layer < numLayers; layer++ {
-		if layer <= 1 {
+		if layer == 0 {
+			// Batch oracle: single path at the queried position.
 			leafIdx := currentPos % len(prover.Trees[layer].Leaves)
 			path := getMerkleProof(prover.Trees[layer], leafIdx)
 			layers[layer] = LayerProof{Paths: []MerklePath{path}}
 		} else {
+			// G_0 and all folded layers: open F coset preimage paths so the
+			// verifier can reconstruct folding consistency for every round.
 			cosetPos := currentPos % (currentDomainSize / f)
 			writePreimageIndices(cosetPos, currentDomainSize, f, preimageBuf)
 
