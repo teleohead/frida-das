@@ -62,7 +62,7 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 			return nil, fmt.Errorf("proof measurement at pos %d: %w", pos, err)
 		}
 		if i == 0 {
-			singleProofBytes = proof.SizeByte()
+			singleProofBytes = proof.ByteSize()
 		}
 	}
 

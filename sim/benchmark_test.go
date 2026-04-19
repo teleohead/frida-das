@@ -193,7 +193,7 @@ func BenchmarkProofSize(b *testing.B) {
 			if err != nil {
 				b.Fatalf("Open: %v", err)
 			}
-			b.ReportMetric(float64(proof.SizeByte()), "bytes/proof")
+			b.ReportMetric(float64(proof.ByteSize()), "bytes/proof")
 			b.ReportMetric(float64(prover.DomainSize), "domain_size")
 			b.ReportMetric(float64(len(proof.Layers)), "layers")
 			b.ResetTimer()

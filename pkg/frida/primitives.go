@@ -36,6 +36,17 @@ type Commitment struct {
 	QueryPositions []int
 }
 
+// ByteSize calculates the serialized size of a Commitment.
+func (c *Commitment) ByteSize() int {
+	size := len(c.Roots) * HashBytes
+	size += len(c.FinalLayer) * BytesPerElement
+	size += len(c.QueryPositions) * 4
+	for i := range c.QueryProofs {
+		size += c.QueryProofs[i].ByteSize()
+	}
+	return size
+}
+
 // MerklePath is the authentication path of a single leaf.
 type MerklePath struct {
 	LeafValue []byte
@@ -55,7 +66,8 @@ type Proof struct {
 	Layers []LayerProof
 }
 
-func (proof *Proof) SizeByte() int {
+// ByteSize calculates the serialized size of a Proof.
+func (proof *Proof) ByteSize() int {
 	size := 0
 	// 4 bytes (index) + 4 bytes (NumLeaves)
 	const pathOverhead = 8

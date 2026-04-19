@@ -122,7 +122,7 @@ func (params Params) CommitAndProveWith(data []byte, eval PolyEvaluator) (*Commi
 	queryProofs := make([]Proof, p.NumQueries)
 
 	for i, pos := range queryPositions {
-		proof, err := openSingle(prover, pos)
+		proof, err := prover.OpenSingle(pos)
 		if err != nil {
 			return nil, nil, fmt.Errorf("query proof at position %d: %w", pos, err)
 		}
