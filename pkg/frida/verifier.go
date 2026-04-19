@@ -147,8 +147,7 @@ func (v *Verifier) verifyBatchCombine(pos int, proof *FriProof, evals []Scalar) 
 	xi := deriveFieldChallenge(hst)
 
 	last := v.Params.BatchSize - 1
-	var expected Scalar
-	expected = evals[last]
+	expected := evals[last]
 	for j := last - 1; j >= 0; j-- {
 		var tmp Scalar
 		tmp.Mul(&expected, &xi)

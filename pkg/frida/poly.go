@@ -226,8 +226,7 @@ func iFFT(evals []Scalar, omegaInv Scalar) []Scalar {
 	nInv.Inverse(&nScalar)
 
 	for i := 0; i < n; i++ {
-		var tmp Scalar
-		tmp = coeffs[i]
+		tmp := coeffs[i]
 		coeffs[i].Mul(&tmp, &nInv)
 	}
 
