@@ -23,10 +23,11 @@ type SampleResponse struct {
 
 // NodeResult is the final report from a light node to the simulator.
 type NodeResult struct {
-	NodeID           int
-	SampledPositions []int
-	AcceptedCount    int
-	RejectedCount    int
-	TotalVerifyNs    time.Duration
-	Err              error
+	NodeID            int
+	SampledPositions  []int
+	AcceptedPositions []int
+	AcceptedCount     int
+	RejectedCount     int
+	TotalVerifyNs     time.Duration
+	Err               error
 }

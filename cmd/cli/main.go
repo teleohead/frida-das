@@ -26,6 +26,8 @@ func main() {
 		cmdCommit(os.Args[2:])
 	case "open":
 		cmdOpen(os.Args[2:])
+	case "verify":
+		cmdVerify(os.Args[2:])
 	case "simulate":
 		cmdSimulate(os.Args[2:])
 	case "help":
@@ -159,6 +161,55 @@ func cmdOpen(args []string) {
 	fmt.Printf("total paths:    %d\n", totalPaths)
 }
 
+func cmdVerify(args []string) {
+	fs := flag.NewFlagSet("verify", flag.ExitOnError)
+	dataPath := fs.String("data", "data.bin", "input data file")
+	blowup := fs.Int("blowup", 8, "blowup factor (inverse rate)")
+	folding := fs.Int("folding", 4, "folding factor")
+	remainder := fs.Int("remainder", 31, "max remainder degree")
+	batch := fs.Int("batch", 64, "batch size B")
+	queries := fs.Int("queries", 32, "number of query repetitions L")
+	fs.Parse(args)
+
+	data, err := os.ReadFile(*dataPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: failed to read data: %v\n", err)
+		os.Exit(1)
+	}
+
+	params := frida.FriParams{
+		BlowupFactor:       *blowup,
+		FoldingFactor:      *folding,
+		MaxRemainderDegree: *remainder,
+		BatchSize:          *batch,
+		NumQueries:         *queries,
+	}
+
+	builder := frida.NewBuilder(params)
+	commitment, _, err := builder.CommitAndProve(data)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: failed to commit: %v\n", err)
+		os.Exit(1)
+	}
+
+	v, err := frida.NewVerifier(params, commitment)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: failed to create verifier: %v\n", err)
+		os.Exit(1)
+	}
+
+	startTime := time.Now()
+	err = v.Verify()
+	duration := time.Since(startTime)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "INVALID: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("VALID: commitment verified in %s\n", duration)
+}
+
 func cmdSimulate(args []string) {
 	fs := flag.NewFlagSet("simulate", flag.ExitOnError)
 	dataPath := fs.String("data", "", "input data file (required)")
@@ -171,6 +222,8 @@ func cmdSimulate(args []string) {
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
 	outFile := fs.String("out", "", "write JSON result to file (optional)")
+	corruptFlag := fs.String("corrupt", "", "comma-separated positions to corrupt (e.g. 0,1,5)")
+	corruptFraction := fs.Float64("corrupt-fraction", 0, "fraction of domain to corrupt (e.g. 0.9)")
 	fs.Parse(args)
 
 	if *dataPath == "" {
@@ -185,6 +238,15 @@ func cmdSimulate(args []string) {
 		os.Exit(1)
 	}
 
+	var corruptPositions []int
+	if *corruptFlag != "" {
+		corruptPositions, err = parsePositions(*corruptFlag)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failure: invalid corrupt positions %q: %v\n", *corruptFlag, err)
+			os.Exit(1)
+		}
+	}
+
 	cfg := sim.SimConfig{
 		Params: frida.FriParams{
 			BlowupFactor:       *blowup,
@@ -193,10 +255,12 @@ func cmdSimulate(args []string) {
 			BatchSize:          *batch,
 			NumQueries:         *queries,
 		},
-		Data:           data,
-		NumNodes:       *nodes,
-		SamplesPerNode: *samples,
-		NetworkWorkers: *workers,
+		Data:             data,
+		NumNodes:         *nodes,
+		SamplesPerNode:   *samples,
+		NetworkWorkers:   *workers,
+		CorruptPositions: corruptPositions,
+		CorruptFraction:  *corruptFraction,
 	}
 
 	fmt.Printf("Running simulation (%d nodes × %d samples, %d bytes)\n",
@@ -243,6 +307,7 @@ Commands:
   generate-data  Generate random test data
   commit         Run CommitAndProve on a data file
   open           Open a proof at specific positions
+  verify         Verify a commitment against committed data
   simulate       Run a full DAS simulation
   help           Show this help
 
@@ -250,6 +315,7 @@ Examples:
   frida-das generate-data --size 65536 --out data.bin
   frida-das commit --data data.bin --blowup 8 --folding 4 --remainder 31 --batch 64 --queries 32
   frida-das open --data data.bin --pos 0,1,5 --blowup 8 --folding 4 --remainder 31 --batch 64 --queries 32
+  frida-das verify --data data.bin --blowup 8 --folding 4 --remainder 31 --batch 64 --queries 32
   frida-das simulate --data data.bin --nodes 50 --samples 32 --workers 8 --out result.json
-`)
+  frida-das simulate --data data.bin --nodes 50 --samples 32 --corrupt-fraction 0.9`)
 }
