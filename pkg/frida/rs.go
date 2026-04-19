@@ -20,10 +20,10 @@ func batchCombine(
 	}
 }
 
-// rsEncodeBatch encodes B polynomials, see in Section 4.3 of the paper.
+// rsBatchEncode encodes B polynomials, see in Section 4.3 of the paper.
 // It produces the interleaved codeword.
 // This matches the storage.InterleavedSlab layout.
-func rsEncodeBatch(
+func rsBatchEncode(
 	polys [][]Scalar,
 	domain []Scalar, // L_0
 	out []Scalar,    // must be pre-allocated with len = len(polys) * len(domain), interleaved!
@@ -39,9 +39,9 @@ func rsEncodeBatch(
 	}
 }
 
-// RSEncode implements Reed-Solomon Encoding.
-// We use Horner's Method f(x) = c_0 + x(c_1 + x(c_2 + ...)) to reduce the number of operations.
-func rsEncode(
+// rsEncodeHorner implements Reed-Solomon Encoding with Horner's Method.
+// Horner's Method: f(x) = c_0 + x(c_1 + x(c_2 + ...)).
+func rsEncodeHorner(
 	poly []Scalar, // a polynomial represented by an array of its coefficients
 	domain []Scalar,
 	out []Scalar, // must be pre-allocated with len = len(domain)

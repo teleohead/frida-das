@@ -41,7 +41,7 @@ func (params FriParams) CommitAndProveWith(data []byte, eval PolyEvaluator) (*Co
 
 	domain := generateDomain(domainSize)
 	batchOracle := make([]Scalar, p.BatchSize*domainSize)
-	rsEncodeBatch(polys, domain, batchOracle, eval)
+	rsBatchEncode(polys, domain, batchOracle, eval)
 
 	batchLeaves := make([][]byte, domainSize)
 	for s := 0; s < domainSize; s++ {
