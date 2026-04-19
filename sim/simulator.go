@@ -16,7 +16,11 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 	// COMMIT
 	tCommitStart := time.Now()
 
-	commitment, prover, err := cfg.Params.CommitAndProve(cfg.Data)
+	eval := cfg.Eval
+	if eval == nil {
+		eval = frida.BaselineEvaluator{}
+	}
+	commitment, prover, err := cfg.Params.CommitAndProveWith(cfg.Data, eval)
 	if err != nil {
 		return nil, fmt.Errorf("commit failed: %w", err)
 	}

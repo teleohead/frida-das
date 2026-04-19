@@ -23,7 +23,7 @@ var (
 
 func mustBuild(t *testing.T) (*Commitment, *ProverState) {
 	t.Helper()
-	comm, prover, err := testParams.CommitAndProve(testBlock)
+	comm, prover, err := testParams.CommitAndProveWith(testBlock, BaselineEvaluator{})
 	if err != nil {
 		t.Fatalf("CommitAndProve: %v", err)
 	}

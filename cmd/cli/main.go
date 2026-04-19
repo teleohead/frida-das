@@ -39,6 +39,15 @@ func main() {
 	}
 }
 
+func parseEvaluator(name string) (frida.PolyEvaluator, error) {
+	switch name {
+	case "baseline":
+		return frida.BaselineEvaluator{}, nil
+	default:
+		return nil, fmt.Errorf("unknown evaluator %q (available: baseline)", name)
+	}
+}
+
 func cmdGenerateData(args []string) {
 	fs := flag.NewFlagSet("generate-data", flag.ExitOnError)
 	size := fs.Int("size", 65536, "data size in bytes")
@@ -70,8 +79,15 @@ func cmdCommit(args []string) {
 	remainder := fs.Int("remainder", 31, "max remainder degree")
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
+	evalName := fs.String("eval", "baseline", "polynomial evaluator (baseline)")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
+		os.Exit(1)
+	}
+
+	eval, err := parseEvaluator(*evalName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -89,11 +105,11 @@ func cmdCommit(args []string) {
 		NumQueries:         *queries,
 	}
 
-	fmt.Printf("*** committing to %d bytes (blowup=%d, folding=%d, remainder=%d, batch=%d, queries=%d) ***\n",
-		len(data), *blowup, *folding, *remainder, *batch, *queries)
+	fmt.Printf("*** committing to %d bytes (blowup=%d, folding=%d, remainder=%d, batch=%d, queries=%d, eval=%s) ***\n",
+		len(data), *blowup, *folding, *remainder, *batch, *queries, *evalName)
 
 	startTime := time.Now()
-	commitment, proverState, err := params.CommitAndProve(data)
+	commitment, proverState, err := params.CommitAndProveWith(data, eval)
 	duration := time.Since(startTime)
 
 	if err != nil {
@@ -118,8 +134,15 @@ func cmdOpen(args []string) {
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
 	posFlag := fs.String("pos", "0", "comma-separated positions to open (e.g. 0,1,5)")
+	evalName := fs.String("eval", "baseline", "polynomial evaluator (baseline)")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
+		os.Exit(1)
+	}
+
+	eval, err := parseEvaluator(*evalName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -143,7 +166,7 @@ func cmdOpen(args []string) {
 		NumQueries:         *queries,
 	}
 
-	_, proverState, err := params.CommitAndProve(data)
+	_, proverState, err := params.CommitAndProveWith(data, eval)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: failed to commit: %v\n", err)
 		os.Exit(1)
@@ -175,9 +198,16 @@ func cmdVerify(args []string) {
 	remainder := fs.Int("remainder", 31, "max remainder degree")
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
+	evalName := fs.String("eval", "baseline", "polynomial evaluator (baseline)")
 	err := fs.Parse(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
+		os.Exit(1)
+	}
+
+	eval, err := parseEvaluator(*evalName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -195,7 +225,7 @@ func cmdVerify(args []string) {
 		NumQueries:         *queries,
 	}
 
-	commitment, _, err := params.CommitAndProve(data)
+	commitment, _, err := params.CommitAndProveWith(data, eval)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: failed to commit: %v\n", err)
 		os.Exit(1)
@@ -233,6 +263,7 @@ func cmdSimulate(args []string) {
 	outFile := fs.String("out", "", "write JSON result to file (optional)")
 	corruptFlag := fs.String("corrupt", "", "comma-separated positions to corrupt (e.g. 0,1,5)")
 	corruptFraction := fs.Float64("corrupt-fraction", 0, "fraction of domain to corrupt (e.g. 0.9)")
+	evalName := fs.String("eval", "baseline", "polynomial evaluator (baseline)")
 	err := fs.Parse(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
@@ -242,6 +273,12 @@ func cmdSimulate(args []string) {
 	if *dataPath == "" {
 		fmt.Fprintf(os.Stderr, "failure: --data is required\n")
 		fs.Usage()
+		os.Exit(1)
+	}
+
+	eval, err := parseEvaluator(*evalName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -270,7 +307,7 @@ func cmdSimulate(args []string) {
 
 	cfg := sim.SimConfig{
 		Params:           params,
-		Eval:             frida.BaselineEvaluator{},
+		Eval:             eval,
 		Data:             data,
 		NumNodes:         *nodes,
 		SamplesPerNode:   *samples,
@@ -279,8 +316,8 @@ func cmdSimulate(args []string) {
 		CorruptFraction:  *corruptFraction,
 	}
 
-	fmt.Printf("Running simulation (%d nodes × %d samples, %d bytes)\n",
-		cfg.NumNodes, cfg.SamplesPerNode, len(data))
+	fmt.Printf("Running simulation (%d nodes × %d samples, %d bytes, eval=%s)\n",
+		cfg.NumNodes, cfg.SamplesPerNode, len(data), *evalName)
 
 	result, err := sim.RunSimulation(cfg)
 	if err != nil {
@@ -330,6 +367,7 @@ Commands:
 Examples:
   frida-das generate-data --size 65536 --out data.bin
   frida-das commit --data data.bin --blowup 8 --folding 4 --remainder 31 --batch 64 --queries 32
+  frida-das commit --data data.bin --eval baseline
   frida-das open --data data.bin --pos 0,1,5 --blowup 8 --folding 4 --remainder 31 --batch 64 --queries 32
   frida-das verify --data data.bin --blowup 8 --folding 4 --remainder 31 --batch 64 --queries 32
   frida-das simulate --data data.bin --nodes 50 --samples 32 --workers 8 --out result.json

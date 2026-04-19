@@ -17,13 +17,8 @@ type FriParams struct {
 	BatchSize int
 }
 
-// CommitAndProve executes the full FRI protocol using the default (Horner) evaluator.
-func (p *FriParams) CommitAndProve(data []byte) (*Commitment, *ProverState, error) {
-	return CommitAndProveWith(*p, data, BaselineEvaluator{})
-}
-
 // CommitAndProveWith executes the full FRI protocol using the provided PolyEvaluator.
-func CommitAndProveWith(params FriParams, data []byte, eval PolyEvaluator) (*Commitment, *ProverState, error) {
+func (params FriParams) CommitAndProveWith(data []byte, eval PolyEvaluator) (*Commitment, *ProverState, error) {
 	p := &params
 	ff := p.FoldingFactor
 
