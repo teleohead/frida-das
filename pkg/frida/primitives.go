@@ -55,6 +55,19 @@ type FriProof struct {
 	Layers []LayerProof
 }
 
+func (proof *FriProof) SizeByte() int {
+	size := 0
+	// 4 bytes (index) + 4 bytes (NumLeaves)
+	const pathOverhead = 8
+	for _, layer := range proof.Layers {
+		for _, path := range layer.Paths {
+			cryptoSize := len(path.LeafValue) + len(path.Siblings)*HashBytes
+			size += cryptoSize + pathOverhead
+		}
+	}
+	return size
+}
+
 type MerkleTree struct {
 	Root   Hash
 	Leaves [][]byte
