@@ -15,3 +15,11 @@ func (BaselineEvaluator) Evaluate(coeffs []Scalar, domain []Scalar) []Scalar {
 }
 
 type NTTEvaluator struct{} // TODO
+
+func (NTTEvaluator) Evaluate(coeffs []Scalar, domain []Scalar) []Scalar {
+	out := make([]Scalar, len(domain))
+	copy(out, coeffs)
+
+	omega := domain[1]
+	return ntt(out, omega)
+}
