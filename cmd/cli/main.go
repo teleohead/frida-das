@@ -348,8 +348,10 @@ func parseEvaluator(name string) (frida.PolyEvaluator, error) {
 	switch name {
 	case "baseline":
 		return frida.BaselineEvaluator{}, nil
+	case "ntt":
+		return frida.NTTEvaluator{}, nil
 	default:
-		return nil, fmt.Errorf("unknown evaluator %q (available: baseline)", name)
+		return nil, fmt.Errorf("unknown evaluator %q (available: baseline, ntt)", name)
 	}
 }
 
