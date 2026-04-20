@@ -14,4 +14,10 @@ func (BaselineEvaluator) Evaluate(coeffs []Scalar, domain []Scalar) []Scalar {
 	return out
 }
 
+// BaselineEvaluator implements frida.PolyEvaluator using NTT (Number Theoretic Transforms).
 type NTTEvaluator struct{} // TODO
+
+// Evaluate evaluates the polynomial defined by coeffs at each point in domain.
+func (NTTEvaluator) Evaluate(coeffs []Scalar, domain []Scalar) []Scalar {
+	panic("TODO")
+}
