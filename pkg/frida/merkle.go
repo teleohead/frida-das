@@ -4,6 +4,12 @@ import (
 	"crypto/sha256"
 )
 
+type MerkleTree struct {
+	Root   Hash
+	Leaves [][]byte
+	Nodes  []Hash
+}
+
 // Builds a Merkle tree from the given leaves and returns the tree structure.
 func buildMerkleTree(leaves [][]byte) MerkleTree {
 

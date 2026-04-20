@@ -79,9 +79,3 @@ func (proof *Proof) ByteSize() int {
 	}
 	return size
 }
-
-type MerkleTree struct {
-	Root   Hash
-	Leaves [][]byte
-	Nodes  []Hash
-}
