@@ -66,7 +66,7 @@ func (mp *MaliciousProvider) ProvideResponse(p *frida.ProverState, pos int) Samp
 	return SampleResponse{
 		Position:    pos,
 		Evaluations: evals,
-		Proof:       frida.FriProof{}, // empty proof
+		Proof:       frida.Proof{}, // empty proof
 		Err:         nil,
 	}
 }

@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	testParams = FriParams{
+	testParams = Params{
 		BlowupFactor:       2,
 		FoldingFactor:      2,
 		MaxRemainderDegree: 1,
@@ -201,14 +201,14 @@ func TestVerifySample_EmptyProof(t *testing.T) {
 	evals := make([]Scalar, B)
 	copy(evals, prover.BatchOracle[:B])
 
-	if err := v.VerifySample(0, &FriProof{}, evals); err == nil {
+	if err := v.VerifySample(0, &Proof{}, evals); err == nil {
 		t.Error("empty proof should not verify")
 	}
 }
 
 // BatchSize=1 is an edge case where the batch oracle and G_0 hold the same value.
 func TestVerifier_BatchSize1(t *testing.T) {
-	params := FriParams{
+	params := Params{
 		BlowupFactor:       2,
 		FoldingFactor:      2,
 		MaxRemainderDegree: 1,

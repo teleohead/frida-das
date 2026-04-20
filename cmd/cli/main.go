@@ -39,15 +39,6 @@ func main() {
 	}
 }
 
-func parseEvaluator(name string) (frida.PolyEvaluator, error) {
-	switch name {
-	case "baseline":
-		return frida.BaselineEvaluator{}, nil
-	default:
-		return nil, fmt.Errorf("unknown evaluator %q (available: baseline)", name)
-	}
-}
-
 func cmdGenerateData(args []string) {
 	fs := flag.NewFlagSet("generate-data", flag.ExitOnError)
 	size := fs.Int("size", 65536, "data size in bytes")
@@ -97,7 +88,7 @@ func cmdCommit(args []string) {
 		os.Exit(1)
 	}
 
-	params := frida.FriParams{
+	params := frida.Params{
 		BlowupFactor:       *blowup,
 		FoldingFactor:      *folding,
 		MaxRemainderDegree: *remainder,
@@ -158,7 +149,7 @@ func cmdOpen(args []string) {
 		os.Exit(1)
 	}
 
-	params := frida.FriParams{
+	params := frida.Params{
 		BlowupFactor:       *blowup,
 		FoldingFactor:      *folding,
 		MaxRemainderDegree: *remainder,
@@ -217,7 +208,7 @@ func cmdVerify(args []string) {
 		os.Exit(1)
 	}
 
-	params := frida.FriParams{
+	params := frida.Params{
 		BlowupFactor:       *blowup,
 		FoldingFactor:      *folding,
 		MaxRemainderDegree: *remainder,
@@ -297,7 +288,7 @@ func cmdSimulate(args []string) {
 		}
 	}
 
-	params := frida.FriParams{
+	params := frida.Params{
 		BlowupFactor:       *blowup,
 		FoldingFactor:      *folding,
 		MaxRemainderDegree: *remainder,
@@ -351,6 +342,15 @@ func parsePositions(s string) ([]int, error) {
 		positions = append(positions, n)
 	}
 	return positions, nil
+}
+
+func parseEvaluator(name string) (frida.PolyEvaluator, error) {
+	switch name {
+	case "baseline":
+		return frida.BaselineEvaluator{}, nil
+	default:
+		return nil, fmt.Errorf("unknown evaluator %q (available: baseline)", name)
+	}
 }
 
 func printUsage() {

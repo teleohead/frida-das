@@ -8,7 +8,7 @@ import (
 )
 
 type Verifier struct {
-	Params     FriParams
+	Params     Params
 	Commitment *Commitment
 	// challenges are recomputed from Commitment.Roots
 	Challenges []Scalar
@@ -16,7 +16,7 @@ type Verifier struct {
 }
 
 // NewVerifier builds verifier from commitment and params
-func NewVerifier(params FriParams, commitment *Commitment) (*Verifier, error) {
+func NewVerifier(params Params, commitment *Commitment) (*Verifier, error) {
 	if len(commitment.Roots) < 2 {
 		return nil, fmt.Errorf("need at least 2 roots, got %d", len(commitment.Roots))
 	}
@@ -80,7 +80,7 @@ func (v *Verifier) Verify() error {
 }
 
 // VerifySample checks a single DAS sample.
-func (v *Verifier) VerifySample(pos int, proof *FriProof, evals []Scalar) error {
+func (v *Verifier) VerifySample(pos int, proof *Proof, evals []Scalar) error {
 	if err := v.verifyMerklePaths(pos, proof); err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (v *Verifier) VerifySample(pos int, proof *FriProof, evals []Scalar) error 
 	return v.verifyFoldingConsistency(pos, proof)
 }
 
-func (v *Verifier) verifyMerklePaths(pos int, proof *FriProof) error {
+func (v *Verifier) verifyMerklePaths(pos int, proof *Proof) error {
 	if len(proof.Layers) != len(v.Commitment.Roots) {
 		return fmt.Errorf("proof has %d layers but commitment has %d roots",
 			len(proof.Layers), len(v.Commitment.Roots))
@@ -128,7 +128,7 @@ func (v *Verifier) verifyMerklePaths(pos int, proof *FriProof) error {
 	return nil
 }
 
-func (v *Verifier) verifyBatchCombine(pos int, proof *FriProof, evals []Scalar) error {
+func (v *Verifier) verifyBatchCombine(pos int, proof *Proof, evals []Scalar) error {
 	if len(evals) != v.Params.BatchSize {
 		return fmt.Errorf("got %d evals, want %d", len(evals), v.Params.BatchSize)
 	}
@@ -183,7 +183,7 @@ func (v *Verifier) verifyBatchCombine(pos int, proof *FriProof, evals []Scalar) 
 	return nil
 }
 
-func (v *Verifier) verifyFoldingConsistency(pos int, proof *FriProof) error {
+func (v *Verifier) verifyFoldingConsistency(pos int, proof *Proof) error {
 	numRounds := len(v.Challenges)
 	F := v.Params.FoldingFactor
 
@@ -274,7 +274,7 @@ func (v *Verifier) verifyFoldingConsistency(pos int, proof *FriProof) error {
 	return v.verifyFinalLayer(currentPos, proof)
 }
 
-func (v *Verifier) verifyFinalLayer(finalPos int, proof *FriProof) error {
+func (v *Verifier) verifyFinalLayer(finalPos int, proof *Proof) error {
 	if len(v.Commitment.FinalLayer) == 0 {
 		return fmt.Errorf("commitment has empty final layer")
 	}

@@ -5,7 +5,7 @@ import (
 )
 
 type ProverState struct {
-	Params     FriParams
+	Params     Params
 	DomainSize int
 
 	// B interleaved codewords (nil if B = 1)
@@ -23,12 +23,12 @@ type ProverState struct {
 }
 
 // Open generates FriProofs for the given positions.
-func (prover *ProverState) Open(positions []int) (*FriProof, error) {
+func (prover *ProverState) Open(positions []int) (*Proof, error) {
 	if len(positions) == 0 {
 		return nil, fmt.Errorf("no positions given")
 	}
 	if len(positions) == 1 {
-		return openSingle(prover, positions[0])
+		return prover.OpenSingle(positions[0])
 	}
 
 	numLayers := len(prover.Trees)
@@ -52,13 +52,13 @@ func (prover *ProverState) Open(positions []int) (*FriProof, error) {
 			}
 		}
 	}
-	return &FriProof{Layers: layers}, nil
+	return &Proof{Layers: layers}, nil
 }
 
-// openSingle generates a proof for exactly one position.
+// OpenSingle generates a proof for exactly one position.
 // For layer 0 (batch oracle) and layer 1 (G_0): opens the single leaf.
 // For layers 2+: opens all F coset preimages so the verifier can check folding consistency via Interpolate.
-func openSingle(prover *ProverState, pos int) (*FriProof, error) {
+func (prover *ProverState) OpenSingle(pos int) (*Proof, error) {
 	numLayers := len(prover.Trees)
 	layers := make([]LayerProof, numLayers)
 	f := prover.Params.FoldingFactor
@@ -95,5 +95,5 @@ func openSingle(prover *ProverState, pos int) (*FriProof, error) {
 		}
 	}
 
-	return &FriProof{Layers: layers}, nil
+	return &Proof{Layers: layers}, nil
 }

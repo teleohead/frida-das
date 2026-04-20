@@ -62,7 +62,7 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 			return nil, fmt.Errorf("proof measurement at pos %d: %w", pos, err)
 		}
 		if i == 0 {
-			singleProofBytes = measureProofSize(proof)
+			singleProofBytes = proof.ByteSize()
 		}
 	}
 
@@ -161,14 +161,4 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 		Throughput:       throughput,
 	}, nil
 
-}
-
-func measureProofSize(proof *frida.FriProof) int {
-	size := 0
-	for _, layer := range proof.Layers {
-		for _, path := range layer.Paths {
-			size += len(path.LeafValue) + len(path.Siblings) + frida.HashBytes + frida.BytesPerElement
-		}
-	}
-	return size
 }

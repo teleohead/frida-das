@@ -10,7 +10,7 @@ import (
 )
 
 type SimConfig struct {
-	Params           frida.FriParams
+	Params           frida.Params
 	Eval             frida.PolyEvaluator
 	Data             []byte
 	NumNodes         int

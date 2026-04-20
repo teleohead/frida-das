@@ -17,14 +17,14 @@ func makeTestData(sizeBytes int) []byte {
 
 type benchCase struct {
 	name     string
-	params   frida.FriParams
+	params   frida.Params
 	dataSize int
 }
 
 var benchCases = []benchCase{
 	{
 		name: "256B/B1/RHO2/F2",
-		params: frida.FriParams{
+		params: frida.Params{
 			BlowupFactor:       2,
 			FoldingFactor:      2,
 			MaxRemainderDegree: 1,
@@ -35,7 +35,7 @@ var benchCases = []benchCase{
 	},
 	{
 		name: "1KB/B2/RHO2/F2",
-		params: frida.FriParams{
+		params: frida.Params{
 			BlowupFactor:       2,
 			FoldingFactor:      2,
 			MaxRemainderDegree: 1,
@@ -46,7 +46,7 @@ var benchCases = []benchCase{
 	},
 	{
 		name: "4KB/B4/RHO2/F2",
-		params: frida.FriParams{
+		params: frida.Params{
 			BlowupFactor:       2,
 			FoldingFactor:      2,
 			MaxRemainderDegree: 1,
@@ -57,7 +57,7 @@ var benchCases = []benchCase{
 	},
 	{
 		name: "16KB/B8/RHO4/F2",
-		params: frida.FriParams{
+		params: frida.Params{
 			BlowupFactor:       4,
 			FoldingFactor:      2,
 			MaxRemainderDegree: 1,
@@ -68,7 +68,7 @@ var benchCases = []benchCase{
 	},
 	{
 		name: "64KB/B16/RHO4/F4",
-		params: frida.FriParams{
+		params: frida.Params{
 			BlowupFactor:       4,
 			FoldingFactor:      4,
 			MaxRemainderDegree: 1,
@@ -193,7 +193,7 @@ func BenchmarkProofSize(b *testing.B) {
 			if err != nil {
 				b.Fatalf("Open: %v", err)
 			}
-			b.ReportMetric(float64(measureProofSize(proof)), "bytes/proof")
+			b.ReportMetric(float64(proof.ByteSize()), "bytes/proof")
 			b.ReportMetric(float64(prover.DomainSize), "domain_size")
 			b.ReportMetric(float64(len(proof.Layers)), "layers")
 			b.ResetTimer()
@@ -217,7 +217,7 @@ func BenchmarkSimulation(b *testing.B) {
 		{numNodes: 100, samplesPerNode: 30},
 	}
 
-	params := frida.FriParams{
+	params := frida.Params{
 		BlowupFactor:       2,
 		FoldingFactor:      2,
 		MaxRemainderDegree: 1,
@@ -249,7 +249,7 @@ func BenchmarkSimulation(b *testing.B) {
 }
 
 func BenchmarkFaultDetection(b *testing.B) {
-	params := frida.FriParams{
+	params := frida.Params{
 		BlowupFactor:       2,
 		FoldingFactor:      2,
 		MaxRemainderDegree: 1,

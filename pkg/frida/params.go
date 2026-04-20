@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-type FriParams struct {
+type Params struct {
 	// Blowup factor for the FRI protocol.
 	BlowupFactor int
 	// Folding factor for the FRI protocol.
@@ -18,30 +18,42 @@ type FriParams struct {
 }
 
 // CommitAndProveWith executes the full FRI protocol using the provided PolyEvaluator.
-func (params FriParams) CommitAndProveWith(data []byte, eval PolyEvaluator) (*Commitment, *ProverState, error) {
-	p := &params
-	ff := p.FoldingFactor
+func (params Params) CommitAndProveWith(data []byte, eval PolyEvaluator) (*Commitment, *ProverState, error) {
+	domain, batchOracle, err := params.Encode(data, eval)
+	if err != nil {
+		return nil, nil, err
+	}
+	return params.commitFromOracle(domain, batchOracle)
+}
 
+// Encode performs only the Reed-Solomon erasure coding step on data.
+// Returns the evaluation domain and the interleaved batch oracle.
+func (params Params) Encode(data []byte, eval PolyEvaluator) ([]Scalar, []Scalar, error) {
 	scalars, err := bytesToScalars(data)
 	if err != nil {
-		return nil, nil, fmt.Errorf("byte-to-scalar data conversion: %w", err)
+		return nil, nil, fmt.Errorf("byte-to-scalar conversion: %w", err)
 	}
-
-	if rem := len(scalars) % p.BatchSize; rem != 0 {
-		scalars = append(scalars, make([]Scalar, p.BatchSize-rem)...)
+	if rem := len(scalars) % params.BatchSize; rem != 0 {
+		scalars = append(scalars, make([]Scalar, params.BatchSize-rem)...)
 	}
-
-	deg := len(scalars) / p.BatchSize
-	domainSize := deg * p.BlowupFactor
-
-	polys := make([][]Scalar, p.BatchSize)
-	for j := 0; j < p.BatchSize; j++ {
+	deg := len(scalars) / params.BatchSize
+	domainSize := deg * params.BlowupFactor
+	polys := make([][]Scalar, params.BatchSize)
+	for j := 0; j < params.BatchSize; j++ {
 		polys[j] = scalars[j*deg : (j+1)*deg]
 	}
-
 	domain := generateDomain(domainSize)
-	batchOracle := make([]Scalar, p.BatchSize*domainSize)
+	batchOracle := make([]Scalar, params.BatchSize*domainSize)
 	rsBatchEncode(polys, domain, batchOracle, eval)
+	return domain, batchOracle, nil
+}
+
+// commitFromOracle builds the full FRI commitment from a pre-encoded domain and batch oracle.
+func (params Params) commitFromOracle(domain []Scalar, batchOracle []Scalar) (*Commitment, *ProverState, error) {
+	p := &params
+	ff := p.FoldingFactor
+	domainSize := len(domain)
+	deg := domainSize / p.BlowupFactor
 
 	batchLeaves := make([][]byte, domainSize)
 	for s := 0; s < domainSize; s++ {
@@ -119,10 +131,10 @@ func (params FriParams) CommitAndProveWith(data []byte, eval PolyEvaluator) (*Co
 	}
 
 	queryPositions := deriveQueryPositions(prevRoot, hst, domainSize, p.NumQueries)
-	queryProofs := make([]FriProof, p.NumQueries)
+	queryProofs := make([]Proof, p.NumQueries)
 
 	for i, pos := range queryPositions {
-		proof, err := openSingle(prover, pos)
+		proof, err := prover.OpenSingle(pos)
 		if err != nil {
 			return nil, nil, fmt.Errorf("query proof at position %d: %w", pos, err)
 		}

@@ -28,12 +28,23 @@ type Commitment struct {
 	// FinalLayer = G_r
 	FinalLayer []Scalar
 
-	// QueryProofs contains L (FriParams.NumQueries) self-checked proofs.
+	// QueryProofs contains L (Params.NumQueries) self-checked proofs.
 	// QueryProofs[i] authenticates the i-th Fiat-Shamir query.
-	QueryProofs []FriProof
+	QueryProofs []Proof
 
 	// QueryPositions[i] is the position sampled at i-th query.
 	QueryPositions []int
+}
+
+// ByteSize calculates the serialized size of a Commitment.
+func (c *Commitment) ByteSize() int {
+	size := len(c.Roots) * HashBytes
+	size += len(c.FinalLayer) * BytesPerElement
+	size += len(c.QueryPositions) * 4
+	for i := range c.QueryProofs {
+		size += c.QueryProofs[i].ByteSize()
+	}
+	return size
 }
 
 // MerklePath is the authentication path of a single leaf.
@@ -49,10 +60,24 @@ type LayerProof struct {
 	Paths []MerklePath
 }
 
-// FriProof combines Merkle paths across all oracle layers into a single query.
+// Proof combines Merkle paths across all oracle layers into a single query.
 // It is both used in Commitment.QueryProofs and as the return value of Open().
-type FriProof struct {
+type Proof struct {
 	Layers []LayerProof
+}
+
+// ByteSize calculates the serialized size of a Proof.
+func (proof *Proof) ByteSize() int {
+	size := 0
+	// 4 bytes (index) + 4 bytes (NumLeaves)
+	const pathOverhead = 8
+	for _, layer := range proof.Layers {
+		for _, path := range layer.Paths {
+			cryptoSize := len(path.LeafValue) + len(path.Siblings)*HashBytes
+			size += cryptoSize + pathOverhead
+		}
+	}
+	return size
 }
 
 type MerkleTree struct {
