@@ -32,6 +32,7 @@ func main() {
 	dataSizes := flag.String("data-sizes", "131072,262144,524288,1048576,2097152", "comma-separated data sizes in bytes")
 	batchSizesFlag := flag.String("batch-sizes", "1,4,16,32", "comma-separated batch sizes")
 	numQueries := flag.Int("num-queries", 30, "FRI NumQueries param (L)")
+	evaluatorName := flag.String("evaluator", "baseline", "polynomial evaluator: baseline (horner) or ntt")
 	output := flag.String("output", "bench_results.csv", "path to CSV output file")
 	evaluator := flag.String("evaluator", "baseline", "evaluator to use: baseline or ntt")
 	flag.Parse()
@@ -72,14 +73,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	var eval frida.PolyEvaluator
-	switch *evaluator {
-	case "baseline":
-		eval = frida.BaselineEvaluator{}
-	case "ntt":
-		eval = frida.NTTEvaluator{}
-	default:
-		fmt.Fprintf(os.Stderr, "unknown evaluator %q (expected: baseline or ntt)\n", *evaluator)
+	eval, err := parseEvaluator(*evaluatorName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to parse --evaluator: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -201,7 +197,7 @@ func main() {
 				}
 
 				row := []string{
-					"goldilocks_f64",
+					"goldilocks_f64_" + *evaluatorName,
 					strconv.Itoa(batchSize),
 					strconv.Itoa(option.blowup),
 					strconv.Itoa(option.folding),
@@ -274,6 +270,17 @@ func toMs(d time.Duration) float64 {
 // formatFloat formats a float with 3 decimal places.
 func formatFloat(f float64) string {
 	return strconv.FormatFloat(f, 'f', 3, 64)
+}
+
+func parseEvaluator(name string) (frida.PolyEvaluator, error) {
+	switch name {
+	case "baseline":
+		return frida.BaselineEvaluator{}, nil
+	case "ntt":
+		return frida.NTTEvaluator{}, nil
+	default:
+		return nil, fmt.Errorf("unknown evaluator %q (available: baseline, ntt)", name)
+	}
 }
 
 func parseFriOptions(s string) ([]friOption, error) {
