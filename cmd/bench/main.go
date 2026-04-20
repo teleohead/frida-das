@@ -33,6 +33,7 @@ func main() {
 	batchSizesFlag := flag.String("batch-sizes", "1,4,16,32", "comma-separated batch sizes")
 	numQueries := flag.Int("num-queries", 30, "FRI NumQueries param (L)")
 	output := flag.String("output", "bench_results.csv", "path to CSV output file")
+	evaluator := flag.String("evaluator", "baseline", "evaluator to use: baseline or ntt")
 	flag.Parse()
 
 	options, err := parseFriOptions(*friOpts)
@@ -71,7 +72,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	eval := frida.BaselineEvaluator{}
+	var eval frida.PolyEvaluator
+	switch *evaluator {
+	case "baseline":
+		eval = frida.BaselineEvaluator{}
+	case "ntt":
+		eval = frida.NTTEvaluator{}
+	default:
+		fmt.Fprintf(os.Stderr, "unknown evaluator %q (expected: baseline or ntt)\n", *evaluator)
+		os.Exit(1)
+	}
 
 	for _, option := range options {
 		for _, dataSize := range sizes {

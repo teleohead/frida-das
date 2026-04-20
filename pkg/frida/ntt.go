@@ -1,7 +1,5 @@
 package frida
 
-import "math/big"
-
 // ntt computes the Number Theoretic Transform of the given coefficients.
 // O(nlog n) time complexity.
 // Using the Cooley-Tukey algorithm.
@@ -20,32 +18,25 @@ func ntt(coeffs []Scalar, omega Scalar) []Scalar {
 		rev := reverseBits(uint32(i)) >> shift
 		out[rev] = coeffs[i]
 	}
+	// Precompute twiddle factors (powers of omega)
+	half := n / 2
+	twiddles := make([]Scalar, half)
+	twiddles[0].SetOne()
+	for k := 1; k < half; k++ {
+		twiddles[k].Mul(&twiddles[k-1], &omega)
+	}
 
-	// 2. Cooley-Tukey iterative iFFT
 	for length := 2; length <= n; length *= 2 {
-		half := length / 2
-
-		// omegaStep = omegaInv ^ (n / length)
-		var omegaStep Scalar
-		exp := uint64(n / length)
-		omegaStep.Exp(omega, new(big.Int).SetUint64(exp))
+		halfLen := length / 2
+		stride := n / length
 
 		for i := 0; i < n; i += length {
-			var w Scalar
-			w.SetOne()
-			for j := 0; j < half; j++ {
+			for j := 0; j < halfLen; j++ {
 				u := out[i+j]
-				var v, tmp Scalar
-				// v = w * out[i+j+half]
-				tmp = out[i+j+half]
-				v.Mul(&tmp, &w)
-				// out[i+j] = u + v
+				var v Scalar
+				v.Mul(&out[i+j+halfLen], &twiddles[j*stride])
 				out[i+j].Add(&u, &v)
-				// out[i+j+half] = u - v
-				out[i+j+half].Sub(&u, &v)
-				// w = w * omegaStep
-				tmp = w
-				w.Mul(&tmp, &omegaStep)
+				out[i+j+halfLen].Sub(&u, &v)
 			}
 		}
 	}
