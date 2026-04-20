@@ -70,13 +70,13 @@ func cmdCommit(args []string) {
 	remainder := fs.Int("remainder", 31, "max remainder degree")
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
-	evalName := fs.String("eval", "baseline", "polynomial evaluator (baseline)")
+	evaluator := fs.String("evaluator", "baseline", "polynomial evaluator (baseline or ntt)")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
 		os.Exit(1)
 	}
 
-	eval, err := parseEvaluator(*evalName)
+	eval, err := parseEvaluator(*evaluator)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
 		os.Exit(1)
@@ -97,7 +97,7 @@ func cmdCommit(args []string) {
 	}
 
 	fmt.Printf("*** committing to %d bytes (blowup=%d, folding=%d, remainder=%d, batch=%d, queries=%d, eval=%s) ***\n",
-		len(data), *blowup, *folding, *remainder, *batch, *queries, *evalName)
+		len(data), *blowup, *folding, *remainder, *batch, *queries, *evaluator)
 
 	startTime := time.Now()
 	commitment, proverState, err := params.CommitAndProveWith(data, eval)
