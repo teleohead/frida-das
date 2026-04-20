@@ -173,14 +173,17 @@ func main() {
 					evalSets := evalsAt(prover, positions)
 
 					for k, pos := range positions {
-						verifier.VerifySample(pos, proofs[k], evalSets[k])
+						err := verifier.VerifySample(pos, proofs[k], evalSets[k])
+						if err != nil {
+							fmt.Fprintf(os.Stderr, "failed to verify sample at pos %d: %v\n", pos, err)
+						}
 					}
 
 					var total time.Duration
 					for i := 0; i < verifyRuns; i++ {
 						start := time.Now()
 						for k, pos := range positions {
-							verifier.VerifySample(pos, proofs[k], evalSets[k])
+							_ = verifier.VerifySample(pos, proofs[k], evalSets[k])
 						}
 						total += time.Since(start)
 					}
