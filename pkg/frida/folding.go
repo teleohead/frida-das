@@ -2,13 +2,18 @@
 
 package frida
 
+// Folder controls how algebraicHash (FRI folding) is computed
+type Folder interface {
+	AlgebraicHash(prev, next, domain []Scalar, rho *Scalar, foldingFactor int)
+}
+
 // algebraicHash implements FRI Algebraic Hash Function H_{rho_i}[G_{i-1}]
 // This function is defined in Section 4.1 of the FRIDA Paper.
 func algebraicHash(
-	prev []Scalar, // G_{i-1}
-	next []Scalar, // G_i
+	prev []Scalar,   // G_{i-1}
+	next []Scalar,   // G_i
 	domain []Scalar, // L_{i-1}
-	rho *Scalar, // rho_i
+	rho *Scalar,     // rho_i
 	foldingFactor int,
 	preimageBuf []int,
 	xs []Scalar,
