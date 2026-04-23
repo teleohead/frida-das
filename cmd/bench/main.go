@@ -32,7 +32,8 @@ func main() {
 	dataSizes := flag.String("data-sizes", "131072,262144,524288,1048576,2097152", "comma-separated data sizes in bytes")
 	batchSizesFlag := flag.String("batch-sizes", "1,4,16,32", "comma-separated batch sizes")
 	numQueries := flag.Int("num-queries", 30, "FRI NumQueries param (L)")
-	evaluator := flag.String("evaluator", "baseline", "polynomial evaluator: baseline (horner) or ntt")
+	evaluatorName := flag.String("evaluator", "ntt", "polynomial evaluator: baseline (horner) or ntt")
+	folderName := flag.String("folder", "parallel-batch", "folder (serial-ordinary, serial-batch or parallel-batch)")
 	output := flag.String("output", "bench_results.csv", "path to CSV output file")
 	flag.Parse()
 
@@ -72,9 +73,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	eval, err := parseEvaluator(*evaluator)
+	evaluator, err := parseEvaluator(*evaluatorName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to parse --evaluator: %v\n", err)
+		os.Exit(1)
+	}
+
+	folder, err := parseFolder(*folderName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to parse --folder: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -98,7 +105,7 @@ func main() {
 				fmt.Printf("running benchmark: blowup=%d folding=%d remainder=%d data=%dKB batch=%d queries=%d\n",
 					option.blowup, option.folding, option.remainder, dataSize/1024, batchSize, *numQueries)
 
-				if _, _, err := params.CommitAndProveWith(data, eval); err != nil {
+				if _, _, err := params.CommitAndProve(data, evaluator, folder); err != nil {
 					fmt.Fprintf(os.Stderr, "failed during warmup commit: %v\n", err)
 					os.Exit(1)
 				}
@@ -108,7 +115,7 @@ func main() {
 				var prover *frida.ProverState
 				for i := 0; i < commitRuns; i++ {
 					start := time.Now()
-					c, p, err := params.CommitAndProveWith(data, eval)
+					c, p, err := params.CommitAndProve(data, evaluator, folder)
 					totalCommitDuration += time.Since(start)
 					if err != nil {
 						fmt.Fprintf(os.Stderr, "failed during commit run %d: %v\n", i, err)
@@ -121,7 +128,7 @@ func main() {
 				var totalErasureDuration time.Duration
 				for i := 0; i < commitRuns; i++ {
 					start := time.Now()
-					if _, _, err := params.Encode(data, eval); err != nil {
+					if _, _, err := params.Encode(data, evaluator); err != nil {
 						fmt.Fprintf(os.Stderr, "failed during erasure run %d: %v\n", i, err)
 						os.Exit(1)
 					}
@@ -196,7 +203,7 @@ func main() {
 				}
 
 				row := []string{
-					"goldilocks_f64_" + *evaluator,
+					"goldilocks_f64_" + *evaluatorName,
 					strconv.Itoa(batchSize),
 					strconv.Itoa(option.blowup),
 					strconv.Itoa(option.folding),
@@ -279,6 +286,19 @@ func parseEvaluator(name string) (frida.PolyEvaluator, error) {
 		return frida.NTTEvaluator{}, nil
 	default:
 		return nil, fmt.Errorf("unknown evaluator %q (available: baseline, ntt)", name)
+	}
+}
+
+func parseFolder(name string) (frida.Folder, error) {
+	switch name {
+	case "serial-ordinary":
+		return frida.SerialOrdinaryFolder{}, nil
+	case "serial-batch":
+		return frida.SerialBatchFolder{}, nil
+	case "parallel-batch":
+		return frida.ParallelBatchFolder{}, nil
+	default:
+		return nil, fmt.Errorf("unknown folder %q (available: serial-ordinary, serial-batch, parallel-batch)", name)
 	}
 }
 

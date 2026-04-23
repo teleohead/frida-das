@@ -17,13 +17,13 @@ type Params struct {
 	BatchSize int
 }
 
-// CommitAndProveWith executes the full FRI protocol using the provided PolyEvaluator.
-func (params Params) CommitAndProveWith(data []byte, eval PolyEvaluator) (*Commitment, *ProverState, error) {
+// CommitAndProve executes the full FRI protocol using the provided PolyEvaluator and Folder
+func (params Params) CommitAndProve(data []byte, eval PolyEvaluator, folder Folder) (*Commitment, *ProverState, error) {
 	domain, batchOracle, err := params.Encode(data, eval)
 	if err != nil {
 		return nil, nil, err
 	}
-	return params.commitFromOracle(domain, batchOracle)
+	return params.commitFromOracle(domain, batchOracle, folder)
 }
 
 // Encode performs only the Reed-Solomon erasure coding step on data.
@@ -49,7 +49,7 @@ func (params Params) Encode(data []byte, eval PolyEvaluator) ([]Scalar, []Scalar
 }
 
 // commitFromOracle builds the full FRI commitment from a pre-encoded domain and batch oracle.
-func (params Params) commitFromOracle(domain []Scalar, batchOracle []Scalar) (*Commitment, *ProverState, error) {
+func (params Params) commitFromOracle(domain []Scalar, batchOracle []Scalar, folder Folder) (*Commitment, *ProverState, error) {
 	p := &params
 	ff := p.FoldingFactor
 	domainSize := len(domain)
@@ -83,12 +83,6 @@ func (params Params) commitFromOracle(domain []Scalar, batchOracle []Scalar) (*C
 	foldedOracles := make([][]Scalar, numRounds)
 	challenges := make([]Scalar, numRounds)
 
-	scratchPreimage := make([]int, ff)
-	scratchXs := make([]Scalar, ff)
-	scratchFs := make([]Scalar, ff)
-	scratchWeights := make([]Scalar, ff)
-	scratchDiffs := make([]Scalar, ff)
-
 	prev := g0
 	prevRoot := g0Tree.Root
 	currentDomainSize := domainSize
@@ -101,7 +95,7 @@ func (params Params) commitFromOracle(domain []Scalar, batchOracle []Scalar) (*C
 		next := make([]Scalar, nextDomainSize)
 		currentDomain := generateDomain(currentDomainSize)
 
-		algebraicHash(prev, next, currentDomain, &challenges[r], ff, scratchPreimage, scratchXs, scratchFs, scratchWeights, scratchDiffs)
+		folder.AlgebraicHash(prev, next, currentDomain, &challenges[r], ff)
 
 		foldedOracles[r] = next
 

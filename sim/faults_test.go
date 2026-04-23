@@ -27,7 +27,7 @@ var (
 
 func mustCommit(t *testing.T) *frida.Commitment {
 	t.Helper()
-	comm, _, err := (testParams).CommitAndProveWith(testData, frida.BaselineEvaluator{})
+	comm, _, err := (testParams).CommitAndProve(testData, frida.NTTEvaluator{}, frida.ParallelBatchFolder{})
 	if err != nil {
 		t.Fatalf("CommitAndProve: %v", err)
 	}

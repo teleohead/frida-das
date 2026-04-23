@@ -2,35 +2,119 @@
 
 package frida
 
-// algebraicHash implements FRI Algebraic Hash Function H_{rho_i}[G_{i-1}]
+import (
+	"runtime"
+	"sync"
+)
+
+// Folder controls how algebraicHash (FRI folding) is computed
+type Folder interface {
+	AlgebraicHash(prev, next, domain []Scalar, rho *Scalar, foldingFactor int)
+}
+
+// SerialOrdinaryFolder folds cosets serially using per-element field inversion
+type SerialOrdinaryFolder struct{}
+
+// SerialBatchFolder folds cosets serially using Montgomery batch inversion
+type SerialBatchFolder struct{}
+
+// ParallelBatchFolder folds cosets in parallel using Montgomery batch inversion
+type ParallelBatchFolder struct{}
+
+// AlgebraicHash implements FRI Algebraic Hash Function H_{rho_i}[G_{i-1}]
 // This function is defined in Section 4.1 of the FRIDA Paper.
-func algebraicHash(
-	prev []Scalar, // G_{i-1}
-	next []Scalar, // G_i
-	domain []Scalar, // L_{i-1}
-	rho *Scalar, // rho_i
-	foldingFactor int,
-	preimageBuf []int,
-	xs []Scalar,
-	fs []Scalar,
-	weights []Scalar,
-	diffs []Scalar,
-) {
+// No Montgomery optimization. No parallelism.
+func (SerialOrdinaryFolder) AlgebraicHash(prev, next, domain []Scalar, rho *Scalar, ff int) {
 	prevSize := len(prev)
-	nextSize := prevSize / foldingFactor
+	nextSize := prevSize / ff
+	preimageBuf := make([]int, ff)
+	xs := make([]Scalar, ff)
+	fs := make([]Scalar, ff)
+	weights := make([]Scalar, ff)
+	diffs := make([]Scalar, ff)
 
 	for c := 0; c < nextSize; c++ {
-		writePreimageIndices(c, prevSize, foldingFactor, preimageBuf)
+		writePreimageIndices(c, prevSize, ff, preimageBuf)
 
-		for k := 0; k < foldingFactor; k++ {
-			index := preimageBuf[k]
-			xs[k] = domain[index]
-			fs[k] = prev[index]
+		for k := 0; k < ff; k++ {
+			idx := preimageBuf[k]
+			xs[k] = domain[idx]
+			fs[k] = prev[idx]
 		}
 
 		// Interpolate(rho, {(x_k, y_k): ...})
-		next[c] = interpolate(rho, xs[:foldingFactor], fs[:foldingFactor], weights, diffs)
+		next[c] = interpolateOrdinary(rho, xs[:ff], fs[:ff], weights, diffs)
 	}
+}
+
+// AlgebraicHash implements FRI Algebraic Hash Function H_{rho_i}[G_{i-1}]
+// This function is defined in Section 4.1 of the FRIDA Paper.
+// Montgomery optimized. No parallelism.
+func (SerialBatchFolder) AlgebraicHash(prev, next, domain []Scalar, rho *Scalar, ff int) {
+	prevSize := len(prev)
+	nextSize := prevSize / ff
+	preimageBuf := make([]int, ff)
+	xs := make([]Scalar, ff)
+	fs := make([]Scalar, ff)
+	weights := make([]Scalar, ff)
+	diffs := make([]Scalar, ff)
+
+	for c := 0; c < nextSize; c++ {
+		writePreimageIndices(c, prevSize, ff, preimageBuf)
+
+		for k := 0; k < ff; k++ {
+			idx := preimageBuf[k]
+			xs[k] = domain[idx]
+			fs[k] = prev[idx]
+		}
+
+		// Interpolate(rho, {(x_k, y_k): ...})
+		next[c] = interpolate(rho, xs[:ff], fs[:ff], weights, diffs)
+	}
+}
+
+// AlgebraicHash implements FRI Algebraic Hash Function H_{rho_i}[G_{i-1}]
+// This function is defined in Section 4.1 of the FRIDA Paper.
+// Montgomery optimized. No parallelism.
+func (ParallelBatchFolder) AlgebraicHash(prev, next, domain []Scalar, rho *Scalar, ff int) {
+	prevSize := len(prev)
+	nextSize := prevSize / ff
+
+	numWorkers := runtime.NumCPU()
+	if numWorkers > nextSize {
+		numWorkers = nextSize
+	}
+	chunkSize := (nextSize + numWorkers - 1) / numWorkers
+
+	var wg sync.WaitGroup
+	wg.Add(numWorkers)
+	for w := 0; w < numWorkers; w++ {
+		start := w * chunkSize
+		end := start + chunkSize
+		if end > nextSize {
+			end = nextSize
+		}
+		go func(start, end int) {
+			defer wg.Done()
+
+			preimageBuf := make([]int, ff)
+			xs := make([]Scalar, ff)
+			fs := make([]Scalar, ff)
+			weights := make([]Scalar, ff)
+			diffs := make([]Scalar, ff)
+
+			for c := start; c < end; c++ {
+				writePreimageIndices(c, prevSize, ff, preimageBuf)
+				for k := 0; k < ff; k++ {
+					idx := preimageBuf[k]
+					xs[k] = domain[idx]
+					fs[k] = prev[idx]
+				}
+				next[c] = interpolate(rho, xs[:ff], fs[:ff], weights, diffs)
+			}
+		}(start, end)
+	}
+	wg.Wait()
 }
 
 // writePreimageIndices writes the F preimage indices into the buf.

@@ -45,11 +45,11 @@ func primitiveRoot(domainSize int) Scalar {
 	return omega
 }
 
-// interpolate implements the Lagrange interpolation procedure.
+// interpolateOrdinary implements the Lagrange interpolation procedure.
 // We use Barycentric Lagrange Interpolation. This is fast when F is small.
 // weights and diffs are pre-allocated buffers to increase performance.
 // See pp. 504, https://people.maths.ox.ac.uk/trefethen/barycentric.pdf
-func interpolate(
+func interpolateOrdinary(
 	x *Scalar,
 	xs []Scalar,
 	fs []Scalar,
@@ -112,4 +112,94 @@ func interpolate(
 	result.Mul(&l, &sum)
 
 	return result
+}
+
+// interpolate implements the Lagrange interpolation procedure with optimizations from Montgomery's batch inversion.
+// We use Barycentric Lagrange Interpolation. This is fast when F is small.
+// weights and diffs are pre-allocated buffers to increase performance.
+// See pp. 504, https://people.maths.ox.ac.uk/trefethen/barycentric.pdf
+func interpolate(
+	x *Scalar,
+	xs []Scalar,
+	fs []Scalar,
+	weights []Scalar,
+	diffs []Scalar,
+) Scalar {
+	n := len(xs)
+	for j := 0; j < n; j++ {
+		diffs[j].Sub(x, &xs[j])
+	}
+
+	for j := 0; j < n; j++ {
+		if diffs[j].IsZero() {
+			return fs[j]
+		}
+	}
+
+	var l Scalar
+	l.SetOne()
+	for j := 0; j < n; j++ {
+		l.Mul(&l, &diffs[j])
+	}
+
+	for j := 0; j < n; j++ {
+		weights[j].SetOne()
+		for k := 0; k < n; k++ {
+			if k == j {
+				continue
+			}
+			var d Scalar
+			d.Sub(&xs[j], &xs[k])
+			weights[j].Mul(&weights[j], &d)
+		}
+	}
+
+	// Batch-invert weights and diffs
+	inPlaceBatchInverse(weights[:n])
+	inPlaceBatchInverse(diffs[:n])
+
+	var sum Scalar
+	sum.SetZero()
+	var term Scalar
+	for j := 0; j < n; j++ {
+		term.Mul(&weights[j], &fs[j])
+		term.Mul(&term, &diffs[j])
+		sum.Add(&sum, &term)
+	}
+
+	var result Scalar
+	result.Mul(&l, &sum)
+
+	return result
+}
+
+// inPlaceBatchInverse implements Montgomery's batch inversion strategy.
+// see: https://medium.com/eryxcoop/montgomerys-trick-for-batch-galois-field-inversion-9b6d0f399da2
+func inPlaceBatchInverse(vec []Scalar) {
+	len := len(vec)
+	if len == 0 {
+		return
+	}
+	if len == 1 {
+		vec[0].Inverse(&vec[0])
+		return
+	}
+
+	betas := make([]Scalar, len)
+	betas[0] = vec[0]
+	for i := 1; i < len; i++ {
+		betas[i].Mul(&betas[i-1], &vec[i])
+	}
+
+	var inv Scalar
+	inv.Inverse(&betas[len-1])
+
+	for i := len - 1; i > 0; i-- {
+		var elem Scalar
+		elem.Mul(&inv, &betas[i-1])
+		inv.Mul(&inv, &vec[i])
+		vec[i] = elem
+	}
+
+	vec[0] = inv
 }

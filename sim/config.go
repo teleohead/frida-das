@@ -12,6 +12,7 @@ import (
 type SimConfig struct {
 	Params           frida.Params
 	Eval             frida.PolyEvaluator
+	Folder           frida.Folder
 	Data             []byte
 	NumNodes         int
 	SamplesPerNode   int

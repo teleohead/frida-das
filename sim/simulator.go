@@ -20,7 +20,12 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 	if eval == nil {
 		eval = frida.BaselineEvaluator{}
 	}
-	commitment, prover, err := cfg.Params.CommitAndProveWith(cfg.Data, eval)
+
+	folder := cfg.Folder
+	if folder == nil {
+		folder = frida.ParallelBatchFolder{}
+	}
+	commitment, prover, err := cfg.Params.CommitAndProve(cfg.Data, eval, folder)
 	if err != nil {
 		return nil, fmt.Errorf("commit failed: %w", err)
 	}
