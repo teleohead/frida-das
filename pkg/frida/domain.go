@@ -113,3 +113,34 @@ func interpolate(
 
 	return result
 }
+
+// inPlaceBatchInverse implements Montgomery's batch inversion strategy.
+// see: https://medium.com/eryxcoop/montgomerys-trick-for-batch-galois-field-inversion-9b6d0f399da2
+func inPlaceBatchInverse(vec []Scalar) {
+	len := len(vec)
+	if len == 0 {
+		return
+	}
+	if len == 1 {
+		vec[0].Inverse(&vec[0])
+		return
+	}
+
+	betas := make([]Scalar, len)
+	betas[0] = vec[0]
+	for i := 1; i < len; i++ {
+		betas[i].Mul(&vec[i], &betas[i+1])
+	}
+
+	var inv Scalar
+	inv.Inverse(&betas[len-1])
+
+	for i := len; i > 0; i-- {
+		var elem Scalar
+		elem.Mul(&inv, &betas[i-1])
+		inv.Mul(&inv, &vec[i])
+		vec[i] = elem
+	}
+
+	vec[0] = inv
+}
