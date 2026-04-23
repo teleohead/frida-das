@@ -10,6 +10,14 @@ type MerkleTree struct {
 	Nodes  []Hash
 }
 
+// MerklePath is the authentication path of a single leaf.
+type MerklePath struct {
+	LeafValue []byte
+	Siblings  []Hash
+	Index     int
+	NumLeaves int
+}
+
 // Builds a Merkle tree from the given leaves and returns the tree structure.
 func buildMerkleTree(leaves [][]byte) MerkleTree {
 

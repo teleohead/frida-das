@@ -237,8 +237,8 @@ func (v *Verifier) verifyFoldingConsistency(pos int, proof *Proof) error {
 			fs[k].SetUint64(binary.LittleEndian.Uint64(leaf[:BytesPerElement]))
 		}
 
-		// interpolate and compare against the next layer
-		expected := interpolate(&v.Challenges[round], xs[:F], fs[:F], weights, diffs)
+		// interpolateMontgomery and compare against the next layer
+		expected := interpolateMontgomery(&v.Challenges[round], xs[:F], fs[:F], weights, diffs)
 		nextLayer := proof.Layers[nextLayerIdx]
 		nextDomainSize := currentDomainSize / F
 		targetIdx := currentPos % nextDomainSize

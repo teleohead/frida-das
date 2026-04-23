@@ -34,7 +34,7 @@ var benchCases = []benchCase{
 			BatchSize:          1,
 		},
 		dataSize: 256,
-		eval:     frida.NTTEvaluator{},
+		eval:     frida.HornerEvaluator{},
 		folder:   frida.ParallelBatchFolder{},
 	},
 	{
@@ -47,7 +47,7 @@ var benchCases = []benchCase{
 			BatchSize:          2,
 		},
 		dataSize: 1 * 1024,
-		eval:     frida.BaselineEvaluator{},
+		eval:     frida.HornerEvaluator{},
 		folder:   frida.ParallelBatchFolder{},
 	},
 	{
@@ -60,7 +60,7 @@ var benchCases = []benchCase{
 			BatchSize:          4,
 		},
 		dataSize: 4 * 1024,
-		eval:     frida.BaselineEvaluator{},
+		eval:     frida.HornerEvaluator{},
 		folder:   frida.ParallelBatchFolder{},
 	},
 	{
@@ -73,7 +73,7 @@ var benchCases = []benchCase{
 			BatchSize:          8,
 		},
 		dataSize: 16 * 1024,
-		eval:     frida.BaselineEvaluator{},
+		eval:     frida.HornerEvaluator{},
 		folder:   frida.ParallelBatchFolder{},
 	},
 	{
@@ -86,7 +86,7 @@ var benchCases = []benchCase{
 			BatchSize:          16,
 		},
 		dataSize: 64 * 1024,
-		eval:     frida.BaselineEvaluator{},
+		eval:     frida.HornerEvaluator{},
 		folder:   frida.ParallelBatchFolder{},
 	},
 

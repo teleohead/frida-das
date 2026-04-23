@@ -47,23 +47,15 @@ func (c *Commitment) ByteSize() int {
 	return size
 }
 
-// MerklePath is the authentication path of a single leaf.
-type MerklePath struct {
-	LeafValue []byte
-	Siblings  []Hash
-	Index     int
-	NumLeaves int
+// Proof combines Merkle paths across all oracle layers into a single query.
+// It is both used in Commitment.QueryProofs and as the return value of Open().
+type Proof struct {
+	Layers []LayerProof
 }
 
 // LayerProof holds the Merkle paths for a single FRI oracle layer.
 type LayerProof struct {
 	Paths []MerklePath
-}
-
-// Proof combines Merkle paths across all oracle layers into a single query.
-// It is both used in Commitment.QueryProofs and as the return value of Open().
-type Proof struct {
-	Layers []LayerProof
 }
 
 // ByteSize calculates the serialized size of a Proof.

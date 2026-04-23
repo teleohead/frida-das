@@ -70,7 +70,7 @@ func cmdCommit(args []string) {
 	remainder := fs.Int("remainder", 31, "max remainder degree")
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
-	evaluatorName := fs.String("evaluatorName", "ntt", "polynomial evaluatorName (baseline or ntt)")
+	evaluatorName := fs.String("evaluatorName", "ntt", "polynomial evaluatorName (hornor or ntt)")
 	folderName := flag.String("folder", "parallel-batch", "folder (serial-ordinary, serial-batch or parallel-batch)")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
@@ -132,7 +132,7 @@ func cmdOpen(args []string) {
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
 	posFlag := fs.String("pos", "0", "comma-separated positions to open (e.g. 0,1,5)")
-	evalName := fs.String("eval", "baseline", "polynomial evaluator (baseline)")
+	evalName := fs.String("eval", "hornor", "polynomial evaluator (hornor)")
 	folderName := flag.String("folder", "parallel-batch", "folder (serial-ordinary, serial-batch or parallel-batch)")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
@@ -203,7 +203,7 @@ func cmdVerify(args []string) {
 	remainder := fs.Int("remainder", 31, "max remainder degree")
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
-	evalName := fs.String("eval", "baseline", "polynomial evaluator (baseline)")
+	evalName := fs.String("eval", "hornor", "polynomial evaluator (hornor)")
 	folderName := flag.String("folder", "parallel-batch", "folder (serial-ordinary, serial-batch or parallel-batch)")
 	err := fs.Parse(args)
 	if err != nil {
@@ -275,7 +275,7 @@ func cmdSimulate(args []string) {
 	outFile := fs.String("out", "", "write JSON result to file (optional)")
 	corruptFlag := fs.String("corrupt", "", "comma-separated positions to corrupt (e.g. 0,1,5)")
 	corruptFraction := fs.Float64("corrupt-fraction", 0, "fraction of domain to corrupt (e.g. 0.9)")
-	evalName := fs.String("eval", "baseline", "polynomial evaluator (baseline)")
+	evalName := fs.String("eval", "hornor", "polynomial evaluator (hornor)")
 	folderName := flag.String("folder", "parallel-batch", "folder (serial-ordinary, serial-batch or parallel-batch)")
 	err := fs.Parse(args)
 	if err != nil {
@@ -375,12 +375,12 @@ func parsePositions(s string) ([]int, error) {
 
 func parseEvaluator(name string) (frida.PolyEvaluator, error) {
 	switch name {
-	case "baseline":
-		return frida.BaselineEvaluator{}, nil
+	case "hornor":
+		return frida.HornerEvaluator{}, nil
 	case "ntt":
 		return frida.NTTEvaluator{}, nil
 	default:
-		return nil, fmt.Errorf("unknown evaluator %q (available: baseline, ntt)", name)
+		return nil, fmt.Errorf("unknown evaluator %q (available: hornor, ntt)", name)
 	}
 }
 
@@ -411,7 +411,7 @@ Commands:
 Examples:
   frida-das generate-data --size 65536 --out data.bin
   frida-das commit --data data.bin --blowup 8 --folding 4 --remainder 31 --batch 64 --queries 32
-  frida-das commit --data data.bin --eval baseline
+  frida-das commit --data data.bin --eval hornor
   frida-das open --data data.bin --pos 0,1,5 --blowup 8 --folding 4 --remainder 31 --batch 64 --queries 32
   frida-das verify --data data.bin --blowup 8 --folding 4 --remainder 31 --batch 64 --queries 32
   frida-das simulate --data data.bin --nodes 50 --samples 32 --workers 8 --out result.json

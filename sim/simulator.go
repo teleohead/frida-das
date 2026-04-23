@@ -18,7 +18,7 @@ func RunSimulation(cfg SimConfig) (*SimResult, error) {
 
 	eval := cfg.Eval
 	if eval == nil {
-		eval = frida.BaselineEvaluator{}
+		eval = frida.HornerEvaluator{}
 	}
 
 	folder := cfg.Folder
