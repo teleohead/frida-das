@@ -7,9 +7,19 @@ type Folder interface {
 	AlgebraicHash(prev, next, domain []Scalar, rho *Scalar, foldingFactor int)
 }
 
-// algebraicHash implements FRI Algebraic Hash Function H_{rho_i}[G_{i-1}]
+// SerialOrdinaryFolder folds cosets serially using per-element field inversion
+type SerialOrdinaryFolder struct{}
+
+// SerialBatchFolder folds cosets serially using Montgomery batch inversion
+type SerialBatchFolder struct{}
+
+// ParallelBatchFolder folds cosets in parallel using Montgomery batch inversion
+type ParallelBatchFolder struct{}
+
+// AlgebraicHash implements FRI Algebraic Hash Function H_{rho_i}[G_{i-1}]
 // This function is defined in Section 4.1 of the FRIDA Paper.
-func algebraicHash(
+// No Montgomery optimization. No parallelism.
+func (SerialOrdinaryFolder) AlgebraicHash(
 	prev []Scalar,   // G_{i-1}
 	next []Scalar,   // G_i
 	domain []Scalar, // L_{i-1}
@@ -34,7 +44,39 @@ func algebraicHash(
 		}
 
 		// Interpolate(rho, {(x_k, y_k): ...})
-		next[c] = interpolate(rho, xs[:foldingFactor], fs[:foldingFactor], weights, diffs)
+		next[c] = interpolateOrdinary(rho, xs[:foldingFactor], fs[:foldingFactor], weights, diffs)
+	}
+}
+
+// AlgebraicHash implements FRI Algebraic Hash Function H_{rho_i}[G_{i-1}]
+// This function is defined in Section 4.1 of the FRIDA Paper.
+// Montgomery optimized. No parallelism.
+func (SerialBatchFolder) AlgebraicHash(
+	prev []Scalar,   // G_{i-1}
+	next []Scalar,   // G_i
+	domain []Scalar, // L_{i-1}
+	rho *Scalar,     // rho_i
+	foldingFactor int,
+	preimageBuf []int,
+	xs []Scalar,
+	fs []Scalar,
+	weights []Scalar,
+	diffs []Scalar,
+) {
+	prevSize := len(prev)
+	nextSize := prevSize / foldingFactor
+
+	for c := 0; c < nextSize; c++ {
+		writePreimageIndices(c, prevSize, foldingFactor, preimageBuf)
+
+		for k := 0; k < foldingFactor; k++ {
+			index := preimageBuf[k]
+			xs[k] = domain[index]
+			fs[k] = prev[index]
+		}
+
+		// Interpolate(rho, {(x_k, y_k): ...})
+		next[c] = interpolateOrdinary(rho, xs[:foldingFactor], fs[:foldingFactor], weights, diffs)
 	}
 }
 
