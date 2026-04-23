@@ -113,8 +113,8 @@ func (ParallelBatchFolder) AlgebraicHash(prev, next, domain []Scalar, rho *Scala
 				next[c] = interpolate(rho, xs[:ff], fs[:ff], weights, diffs)
 			}
 		}(start, end)
-		wg.Wait()
 	}
+	wg.Wait()
 }
 
 // writePreimageIndices writes the F preimage indices into the buf.

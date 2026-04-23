@@ -188,13 +188,13 @@ func inPlaceBatchInverse(vec []Scalar) {
 	betas := make([]Scalar, len)
 	betas[0] = vec[0]
 	for i := 1; i < len; i++ {
-		betas[i].Mul(&vec[i], &betas[i+1])
+		betas[i].Mul(&betas[i-1], &vec[i])
 	}
 
 	var inv Scalar
 	inv.Inverse(&betas[len-1])
 
-	for i := len; i > 0; i-- {
+	for i := len - 1; i > 0; i-- {
 		var elem Scalar
 		elem.Mul(&inv, &betas[i-1])
 		inv.Mul(&inv, &vec[i])
