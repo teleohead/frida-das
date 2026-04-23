@@ -23,7 +23,7 @@ var (
 
 func mustBuild(t *testing.T) (*Commitment, *ProverState) {
 	t.Helper()
-	comm, prover, err := testParams.CommitAndProveWith(testBlock, BaselineEvaluator{})
+	comm, prover, err := testParams.CommitAndProve(testBlock, NTTEvaluator{}, ParallelBatchFolder{})
 	if err != nil {
 		t.Fatalf("CommitAndProve: %v", err)
 	}
@@ -220,7 +220,7 @@ func TestVerifier_BatchSize1(t *testing.T) {
 		data[i] = byte(i + 1)
 	}
 
-	comm, prover, err := params.CommitAndProveWith(data, BaselineEvaluator{})
+	comm, prover, err := params.CommitAndProve(data, NTTEvaluator{}, ParallelBatchFolder{})
 	if err != nil {
 		t.Fatalf("CommitAndProve: %v", err)
 	}

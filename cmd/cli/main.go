@@ -70,13 +70,20 @@ func cmdCommit(args []string) {
 	remainder := fs.Int("remainder", 31, "max remainder degree")
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
-	evaluator := fs.String("evaluator", "baseline", "polynomial evaluator (baseline or ntt)")
+	evaluatorName := fs.String("evaluatorName", "ntt", "polynomial evaluatorName (baseline or ntt)")
+	folderName := flag.String("folder", "parallel-batch", "folder (serial-ordinary, serial-batch or parallel-batch)")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
 		os.Exit(1)
 	}
 
-	eval, err := parseEvaluator(*evaluator)
+	evaluator, err := parseEvaluator(*evaluatorName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
+		os.Exit(1)
+	}
+
+	folder, err := parseFolder(*folderName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
 		os.Exit(1)
@@ -96,11 +103,11 @@ func cmdCommit(args []string) {
 		NumQueries:         *queries,
 	}
 
-	fmt.Printf("*** committing to %d bytes (blowup=%d, folding=%d, remainder=%d, batch=%d, queries=%d, eval=%s) ***\n",
-		len(data), *blowup, *folding, *remainder, *batch, *queries, *evaluator)
+	fmt.Printf("*** committing to %d bytes (blowup=%d, folding=%d, remainder=%d, batch=%d, queries=%d, evaluator=%s) ***\n",
+		len(data), *blowup, *folding, *remainder, *batch, *queries, *evaluatorName)
 
 	startTime := time.Now()
-	commitment, proverState, err := params.CommitAndProveWith(data, eval)
+	commitment, proverState, err := params.CommitAndProve(data, evaluator, folder)
 	duration := time.Since(startTime)
 
 	if err != nil {
@@ -126,12 +133,19 @@ func cmdOpen(args []string) {
 	queries := fs.Int("queries", 32, "number of query repetitions L")
 	posFlag := fs.String("pos", "0", "comma-separated positions to open (e.g. 0,1,5)")
 	evalName := fs.String("eval", "baseline", "polynomial evaluator (baseline)")
+	folderName := flag.String("folder", "parallel-batch", "folder (serial-ordinary, serial-batch or parallel-batch)")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
 		os.Exit(1)
 	}
 
-	eval, err := parseEvaluator(*evalName)
+	evaluator, err := parseEvaluator(*evalName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
+		os.Exit(1)
+	}
+
+	folder, err := parseFolder(*folderName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
 		os.Exit(1)
@@ -157,7 +171,7 @@ func cmdOpen(args []string) {
 		NumQueries:         *queries,
 	}
 
-	_, proverState, err := params.CommitAndProveWith(data, eval)
+	_, proverState, err := params.CommitAndProve(data, evaluator, folder)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: failed to commit: %v\n", err)
 		os.Exit(1)
@@ -190,13 +204,20 @@ func cmdVerify(args []string) {
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
 	evalName := fs.String("eval", "baseline", "polynomial evaluator (baseline)")
+	folderName := flag.String("folder", "parallel-batch", "folder (serial-ordinary, serial-batch or parallel-batch)")
 	err := fs.Parse(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
 		os.Exit(1)
 	}
 
-	eval, err := parseEvaluator(*evalName)
+	evaluator, err := parseEvaluator(*evalName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
+		os.Exit(1)
+	}
+
+	folder, err := parseFolder(*folderName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
 		os.Exit(1)
@@ -216,7 +237,7 @@ func cmdVerify(args []string) {
 		NumQueries:         *queries,
 	}
 
-	commitment, _, err := params.CommitAndProveWith(data, eval)
+	commitment, _, err := params.CommitAndProve(data, evaluator, folder)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: failed to commit: %v\n", err)
 		os.Exit(1)
@@ -255,6 +276,7 @@ func cmdSimulate(args []string) {
 	corruptFlag := fs.String("corrupt", "", "comma-separated positions to corrupt (e.g. 0,1,5)")
 	corruptFraction := fs.Float64("corrupt-fraction", 0, "fraction of domain to corrupt (e.g. 0.9)")
 	evalName := fs.String("eval", "baseline", "polynomial evaluator (baseline)")
+	folderName := flag.String("folder", "parallel-batch", "folder (serial-ordinary, serial-batch or parallel-batch)")
 	err := fs.Parse(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
@@ -268,6 +290,12 @@ func cmdSimulate(args []string) {
 	}
 
 	eval, err := parseEvaluator(*evalName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
+		os.Exit(1)
+	}
+
+	folder, err := parseFolder(*folderName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
 		os.Exit(1)
@@ -299,6 +327,7 @@ func cmdSimulate(args []string) {
 	cfg := sim.SimConfig{
 		Params:           params,
 		Eval:             eval,
+		Folder:           folder,
 		Data:             data,
 		NumNodes:         *nodes,
 		SamplesPerNode:   *samples,
@@ -352,6 +381,19 @@ func parseEvaluator(name string) (frida.PolyEvaluator, error) {
 		return frida.NTTEvaluator{}, nil
 	default:
 		return nil, fmt.Errorf("unknown evaluator %q (available: baseline, ntt)", name)
+	}
+}
+
+func parseFolder(name string) (frida.Folder, error) {
+	switch name {
+	case "serial-ordinary":
+		return frida.SerialOrdinaryFolder{}, nil
+	case "serial-batch":
+		return frida.SerialBatchFolder{}, nil
+	case "parallel-batch":
+		return frida.ParallelBatchFolder{}, nil
+	default:
+		return nil, fmt.Errorf("unknown folder %q (available: serial-ordinary, serial-batch, parallel-batch)", name)
 	}
 }
 

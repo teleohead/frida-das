@@ -20,6 +20,7 @@ type benchCase struct {
 	params   frida.Params
 	dataSize int
 	eval     frida.PolyEvaluator
+	folder   frida.Folder
 }
 
 var benchCases = []benchCase{
@@ -33,7 +34,8 @@ var benchCases = []benchCase{
 			BatchSize:          1,
 		},
 		dataSize: 256,
-		eval:     frida.BaselineEvaluator{},
+		eval:     frida.NTTEvaluator{},
+		folder:   frida.ParallelBatchFolder{},
 	},
 	{
 		name: "1KB/baseline/B2/RHO2/F2",
@@ -46,6 +48,7 @@ var benchCases = []benchCase{
 		},
 		dataSize: 1 * 1024,
 		eval:     frida.BaselineEvaluator{},
+		folder:   frida.ParallelBatchFolder{},
 	},
 	{
 		name: "4KB/baseline/B4/RHO2/F2",
@@ -58,6 +61,7 @@ var benchCases = []benchCase{
 		},
 		dataSize: 4 * 1024,
 		eval:     frida.BaselineEvaluator{},
+		folder:   frida.ParallelBatchFolder{},
 	},
 	{
 		name: "16KB/baseline/B8/RHO4/F2",
@@ -70,6 +74,7 @@ var benchCases = []benchCase{
 		},
 		dataSize: 16 * 1024,
 		eval:     frida.BaselineEvaluator{},
+		folder:   frida.ParallelBatchFolder{},
 	},
 	{
 		name: "64KB/baseline/B16/RHO4/F4",
@@ -82,6 +87,7 @@ var benchCases = []benchCase{
 		},
 		dataSize: 64 * 1024,
 		eval:     frida.BaselineEvaluator{},
+		folder:   frida.ParallelBatchFolder{},
 	},
 
 	{
@@ -95,6 +101,7 @@ var benchCases = []benchCase{
 		},
 		dataSize: 256,
 		eval:     frida.NTTEvaluator{},
+		folder:   frida.ParallelBatchFolder{},
 	},
 	{
 		name: "1KB/ntt/B2/RHO2/F2",
@@ -107,6 +114,7 @@ var benchCases = []benchCase{
 		},
 		dataSize: 1 * 1024,
 		eval:     frida.NTTEvaluator{},
+		folder:   frida.ParallelBatchFolder{},
 	},
 	{
 		name: "4KB/ntt/B4/RHO2/F2",
@@ -119,6 +127,7 @@ var benchCases = []benchCase{
 		},
 		dataSize: 4 * 1024,
 		eval:     frida.NTTEvaluator{},
+		folder:   frida.ParallelBatchFolder{},
 	},
 	{
 		name: "16KB/ntt/B8/RHO4/F2",
@@ -131,6 +140,7 @@ var benchCases = []benchCase{
 		},
 		dataSize: 16 * 1024,
 		eval:     frida.NTTEvaluator{},
+		folder:   frida.ParallelBatchFolder{},
 	},
 	{
 		name: "64KB/ntt/B16/RHO4/F4",
@@ -143,6 +153,7 @@ var benchCases = []benchCase{
 		},
 		dataSize: 64 * 1024,
 		eval:     frida.NTTEvaluator{},
+		folder:   frida.ParallelBatchFolder{},
 	},
 }
 
@@ -154,7 +165,7 @@ func BenchmarkCommit(b *testing.B) {
 			b.SetBytes(int64(tc.dataSize))
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				_, _, err := (tc.params).CommitAndProveWith(data, tc.eval)
+				_, _, err := (tc.params).CommitAndProve(data, tc.eval, tc.folder)
 				if err != nil {
 					b.Fatalf("CommitAndProve: %v", err)
 				}
@@ -168,7 +179,7 @@ func BenchmarkOpen(b *testing.B) {
 	for _, tc := range benchCases {
 		b.Run(tc.name, func(b *testing.B) {
 			data := makeTestData(tc.dataSize)
-			_, prover, err := (tc.params).CommitAndProveWith(data, tc.eval)
+			_, prover, err := (tc.params).CommitAndProve(data, tc.eval, tc.folder)
 			if err != nil {
 				b.Fatalf("setup: %v", err)
 			}
@@ -187,7 +198,7 @@ func BenchmarkNewVerifier(b *testing.B) {
 	for _, tc := range benchCases {
 		b.Run(tc.name, func(b *testing.B) {
 			data := makeTestData(tc.dataSize)
-			comm, _, err := (tc.params).CommitAndProveWith(data, tc.eval)
+			comm, _, err := (tc.params).CommitAndProve(data, tc.eval, tc.folder)
 			if err != nil {
 				b.Fatalf("setup: %v", err)
 			}
@@ -205,7 +216,7 @@ func BenchmarkVerifyCommitmentProofs(b *testing.B) {
 	for _, tc := range benchCases {
 		b.Run(tc.name, func(b *testing.B) {
 			data := makeTestData(tc.dataSize)
-			comm, _, err := (tc.params).CommitAndProveWith(data, tc.eval)
+			comm, _, err := (tc.params).CommitAndProve(data, tc.eval, tc.folder)
 			if err != nil {
 				b.Fatalf("setup: %v", err)
 			}
@@ -227,7 +238,7 @@ func BenchmarkVerifySample(b *testing.B) {
 	for _, tc := range benchCases {
 		b.Run(tc.name, func(b *testing.B) {
 			data := makeTestData(tc.dataSize)
-			comm, prover, err := (tc.params).CommitAndProveWith(data, tc.eval)
+			comm, prover, err := (tc.params).CommitAndProve(data, tc.eval, tc.folder)
 			if err != nil {
 				b.Fatalf("setup: %v", err)
 			}
@@ -252,7 +263,7 @@ func BenchmarkProofSize(b *testing.B) {
 	for _, tc := range benchCases {
 		b.Run(tc.name, func(b *testing.B) {
 			data := makeTestData(tc.dataSize)
-			_, prover, err := (tc.params).CommitAndProveWith(data, tc.eval)
+			_, prover, err := (tc.params).CommitAndProve(data, tc.eval, tc.folder)
 			if err != nil {
 				b.Fatalf("setup: %v", err)
 			}
@@ -325,7 +336,7 @@ func BenchmarkFaultDetection(b *testing.B) {
 	}
 	data := makeTestData(4 * 1024)
 
-	comm, prover, err := (params).CommitAndProveWith(data, frida.NTTEvaluator{})
+	comm, prover, err := (params).CommitAndProve(data, frida.NTTEvaluator{}, frida.ParallelBatchFolder{})
 	if err != nil {
 		b.Fatalf("setup: %v", err)
 	}
