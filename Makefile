@@ -21,7 +21,7 @@ bench-baseline:
 	go run ./cmd/bench/ \
 		--evaluator horner \
 		--folder serial-ordinary \
-		--output bench_horner.csv
+		--output bench_baseline.csv
 
 # BENCHMARK WITH NTT EVALUATOR + THREE DIFFERENT FOLDING STRATEGIES
 bench-compare:
