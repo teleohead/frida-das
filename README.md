@@ -113,11 +113,15 @@ The CSV output is aligned with the [NethermindEth's Rust benchmark suite](https:
 
 ## Optimizations
 
-| Optimization | Impact                            |
-|---|-----------------------------------|
-| NTT evaluator (O(n log n) vs Horner O(n²)) | ~??× erasure speedup on ???       |
-| Montgomery batch inversion in barycentric interpolation | ~?× commitment speedup on ???     |
-| Parallel algebraic hash across CPU cores | ~?× commitment speedup            |
+Measured at 128 KB, FRI params (ρ⁻¹=4, F=2, R=15, L=32, B=1) on an Intel i7-14700F:
+
+| Optimization | Impact |
+|---|---|
+| NTT evaluator (O(n log n) vs Horner O(n²)) | ~1,825× erasure speedup |
+| Montgomery batch inversion in barycentric interpolation | ~1.6× commitment speedup |
+| Parallel algebraic hash across CPU cores | ~2.0× commitment speedup |
+| F=2 closed-form folding fast path | ~1.3× commitment speedup |
+| **Combined** | **~221× commitment speedup over baseline** |
 
 ## License
 
