@@ -336,8 +336,8 @@ func cmdSimulate(args []string) {
 		CorruptFraction:  *corruptFraction,
 	}
 
-	fmt.Printf("Running simulation (%d nodes × %d samples, %d bytes, eval=%s)\n",
-		cfg.NumNodes, cfg.SamplesPerNode, len(data), *evaluatorName)
+	fmt.Printf("Running simulation (%d nodes × %d samples, %d bytes, eval=%s, folder=%s)\n",
+		cfg.NumNodes, cfg.SamplesPerNode, len(data), *evaluatorName, *folderName)
 
 	result, err := sim.RunSimulation(cfg)
 	if err != nil {
@@ -411,7 +411,7 @@ Commands:
 Examples:
   frida-das generate-data --size 65536 --out data.bin
   frida-das commit --data data.bin --blowup 8 --folding 4 --remainder 31 --batch 64 --queries 32
-  frida-das commit --data data.bin --eval hornor
+  frida-das commit --data data.bin --evaluator hornor
   frida-das open --data data.bin --pos 0,1,5 --blowup 8 --folding 4 --remainder 31 --batch 64 --queries 32
   frida-das verify --data data.bin --blowup 8 --folding 4 --remainder 31 --batch 64 --queries 32
   frida-das simulate --data data.bin --nodes 50 --samples 32 --workers 8 --out result.json
