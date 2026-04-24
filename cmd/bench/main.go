@@ -32,7 +32,7 @@ func main() {
 	dataSizes := flag.String("data-sizes", "131072,262144,524288,1048576,2097152", "comma-separated data sizes in bytes")
 	batchSizesFlag := flag.String("batch-sizes", "1,4,16,32", "comma-separated batch sizes")
 	numQueries := flag.Int("num-queries", 30, "FRI NumQueries param (L)")
-	evaluatorName := flag.String("evaluator", "ntt", "polynomial evaluator: horner or ntt")
+	evaluatorName := flag.String("evaluator", "ntt", "polynomial evaluator (horner or ntt)")
 	folderName := flag.String("folder", "parallel-batch", "folder (serial-ordinary, serial-batch or parallel-batch)")
 	output := flag.String("output", "bench_results.csv", "path to CSV output file")
 	flag.Parse()

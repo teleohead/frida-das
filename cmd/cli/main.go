@@ -70,7 +70,7 @@ func cmdCommit(args []string) {
 	remainder := fs.Int("remainder", 31, "max remainder degree")
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
-	evaluatorName := fs.String("evaluatorName", "ntt", "polynomial evaluatorName (hornor or ntt)")
+	evaluatorName := fs.String("evaluator", "ntt", "polynomial evaluator (hornor or ntt)")
 	folderName := flag.String("folder", "parallel-batch", "folder (serial-ordinary, serial-batch or parallel-batch)")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
@@ -132,14 +132,14 @@ func cmdOpen(args []string) {
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
 	posFlag := fs.String("pos", "0", "comma-separated positions to open (e.g. 0,1,5)")
-	evalName := fs.String("eval", "hornor", "polynomial evaluator (hornor)")
+	evaluatorName := fs.String("evaluator", "ntt", "polynomial evaluator (hornor or ntt)")
 	folderName := flag.String("folder", "parallel-batch", "folder (serial-ordinary, serial-batch or parallel-batch)")
 	if err := fs.Parse(args); err != nil {
 		fmt.Fprintf(os.Stderr, "failure: fail to parse args: %v\n", err)
 		os.Exit(1)
 	}
 
-	evaluator, err := parseEvaluator(*evalName)
+	evaluator, err := parseEvaluator(*evaluatorName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
 		os.Exit(1)
@@ -203,7 +203,7 @@ func cmdVerify(args []string) {
 	remainder := fs.Int("remainder", 31, "max remainder degree")
 	batch := fs.Int("batch", 64, "batch size B")
 	queries := fs.Int("queries", 32, "number of query repetitions L")
-	evalName := fs.String("eval", "hornor", "polynomial evaluator (hornor)")
+	evaluatorName := fs.String("evaluator", "ntt", "polynomial evaluator (hornor or ntt)")
 	folderName := flag.String("folder", "parallel-batch", "folder (serial-ordinary, serial-batch or parallel-batch)")
 	err := fs.Parse(args)
 	if err != nil {
@@ -211,7 +211,7 @@ func cmdVerify(args []string) {
 		os.Exit(1)
 	}
 
-	evaluator, err := parseEvaluator(*evalName)
+	evaluator, err := parseEvaluator(*evaluatorName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
 		os.Exit(1)
@@ -275,7 +275,7 @@ func cmdSimulate(args []string) {
 	outFile := fs.String("out", "", "write JSON result to file (optional)")
 	corruptFlag := fs.String("corrupt", "", "comma-separated positions to corrupt (e.g. 0,1,5)")
 	corruptFraction := fs.Float64("corrupt-fraction", 0, "fraction of domain to corrupt (e.g. 0.9)")
-	evalName := fs.String("eval", "hornor", "polynomial evaluator (hornor)")
+	evaluatorName := fs.String("evaluator", "ntt", "polynomial evaluator (hornor or ntt)")
 	folderName := flag.String("folder", "parallel-batch", "folder (serial-ordinary, serial-batch or parallel-batch)")
 	err := fs.Parse(args)
 	if err != nil {
@@ -289,7 +289,7 @@ func cmdSimulate(args []string) {
 		os.Exit(1)
 	}
 
-	eval, err := parseEvaluator(*evalName)
+	eval, err := parseEvaluator(*evaluatorName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failure: %v\n", err)
 		os.Exit(1)
@@ -337,7 +337,7 @@ func cmdSimulate(args []string) {
 	}
 
 	fmt.Printf("Running simulation (%d nodes × %d samples, %d bytes, eval=%s)\n",
-		cfg.NumNodes, cfg.SamplesPerNode, len(data), *evalName)
+		cfg.NumNodes, cfg.SamplesPerNode, len(data), *evaluatorName)
 
 	result, err := sim.RunSimulation(cfg)
 	if err != nil {
