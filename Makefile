@@ -2,7 +2,8 @@
 
 # BUILD BINARIES
 build:
-	go build ./...
+	go build -o frida-das ./cmd/cli/
+	go build -o frida-bench ./cmd/bench/
 
 # RUN ALL TESTS
 test:
